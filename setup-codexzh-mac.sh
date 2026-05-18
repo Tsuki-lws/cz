@@ -8,7 +8,6 @@ if [ -z "$API_KEY" ] || [ "$API_KEY" = "__API_KEY__" ]; then
   exit 1
 fi
 
-# {"_type":"newapi_channel_conn","key":"sk-LuGd1Za5AI5CF1E6iatpunz1aRRT3tJyvXIeTwlC02Cyibpr","url":"https://chat.ekti.cc"}
 
 CODEX_DIR="$HOME/.codex"
 mkdir -p "$CODEX_DIR"

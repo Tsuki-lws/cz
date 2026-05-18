@@ -22,3 +22,7 @@ export RCLONE_CONFIG_DIR="$INSPIRE_USER_GLOBAL_DIR/rclone"
 export NPM_CONFIG_CACHE="$INSPIRE_USER_GLOBAL_DIR/npm"
 export TORCH_HOME="$INSPIRE_USER_GLOBAL_DIR/torch"
 export MPLCONFIGDIR="$INSPIRE_USER_GLOBAL_DIR/matplotlib"
+
+# Local service endpoints for this project.
+export SANDBOX_BASE_URL="${SANDBOX_BASE_URL:-http://127.0.0.1:8080}"
+export SEARCH_PROXY_URL="${SEARCH_PROXY_URL:-http://127.0.0.1:1227}"

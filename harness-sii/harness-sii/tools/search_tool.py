@@ -39,14 +39,27 @@ import requests
 
 logger = logging.getLogger("harness.tools.search")
 
+_INVISIBLE_CHARS = {
+    ord("\u200b"): None,
+    ord("\u200c"): None,
+    ord("\u200d"): None,
+    ord("\ufeff"): None,
+}
+
+
+def _clean_env_text(value: str) -> str:
+    return value.translate(_INVISIBLE_CHARS).strip()
+
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 # Proxy mode (recommended for the air-gapped GPU host).
-SEARCH_PROXY_URL    = os.getenv("SEARCH_PROXY_URL", "https://nat2-notebook-inspire.sii.edu.cn/ws-7c23bd1d-9bae-4238-803a-737a35480e18/project-39fbffc7-dcca-4fb4-b43a-2f69f72f7e52/user-37373cef-1fa2-4dbb-ab3e-5c803eb41384/vscode/3c98f013-c5a7-4656-b5d9-37c8b26493ad/8c9601c0-e5ca-4c32-8e55-4aac78cc4e09/proxy/1227/").rstrip("/")
-SEARCH_PROXY_TOKEN  = os.getenv("SEARCH_PROXY_TOKEN", "") or os.getenv(
-    "PROXY_API_TOKEN", ""
+SEARCH_PROXY_URL    = _clean_env_text(
+    os.getenv("SEARCH_PROXY_URL", "http://127.0.0.1:1227")
+).rstrip("/")
+SEARCH_PROXY_TOKEN  = _clean_env_text(
+    os.getenv("SEARCH_PROXY_TOKEN", "") or os.getenv("PROXY_API_TOKEN", "")
 )
 PROXY_HTTP_TIMEOUT  = float(os.getenv("SEARCH_PROXY_TIMEOUT", "120"))
 
@@ -65,6 +78,11 @@ try:
     )
     if not isinstance(SEARCH_PROXY_EXTRA_HEADERS, dict):
         SEARCH_PROXY_EXTRA_HEADERS = {}
+    else:
+        SEARCH_PROXY_EXTRA_HEADERS = {
+            _clean_env_text(str(k)): _clean_env_text(str(v))
+            for k, v in SEARCH_PROXY_EXTRA_HEADERS.items()
+        }
 except Exception:  # noqa: BLE001
     SEARCH_PROXY_EXTRA_HEADERS = {}
 
