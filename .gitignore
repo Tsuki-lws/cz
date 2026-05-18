@@ -1,0 +1,34 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local runtime / logs
+*.log
+*.pid
+
+# Project-local caches and generated data
+.global/
+harness-sii/search-proxy/.venv/
+**/trajectories/*.jsonl
+
+# Secrets / env files
+.env
+.env.*
+!.env.example
