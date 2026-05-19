@@ -38,6 +38,7 @@ class Settings:
     serper_timeout: float = float(os.getenv("SERPER_TIMEOUT", "30"))
     jina_timeout: float = float(os.getenv("JINA_TIMEOUT", "45"))
     upload_timeout: float = float(os.getenv("UPLOAD_TIMEOUT", "60"))
+    cache_size: int = int(os.getenv("SEARCH_PROXY_CACHE_SIZE", "512"))
 
 
 settings = Settings()

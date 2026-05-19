@@ -29,9 +29,11 @@ Each result dict::
 
 from __future__ import annotations
 
+import base64
 import logging
 import mimetypes
 import os
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -184,6 +186,31 @@ def _proxy_upload_image(path: Path) -> str:
     return url
 
 
+def _image_text_to_temp_file(image: str) -> Path | None:
+    text = image.strip()
+    if text.startswith("data:image/") and ";base64," in text:
+        header, b64 = text.split(",", 1)
+        ext = header.split("/", 1)[1].split(";", 1)[0].lower()
+    elif len(text) > 256 and not any(ch.isspace() for ch in text[:256]):
+        b64 = text
+        ext = "jpg"
+    else:
+        return None
+    ext = {"jpeg": "jpg", "png": "png", "webp": "webp", "gif": "gif"}.get(ext, ext)
+    try:
+        raw = base64.b64decode(b64, validate=False)
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(f"search_image: invalid base64 image: {exc}") from exc
+    if not raw:
+        raise ValueError("search_image: empty base64 image")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext or 'jpg'}")
+    try:
+        tmp.write(raw)
+        return Path(tmp.name)
+    finally:
+        tmp.close()
+
+
 # ---------------------------------------------------------------------------
 # Direct-mode helpers (used only when SEARCH_PROXY_URL is empty)
 # ---------------------------------------------------------------------------
@@ -253,6 +280,15 @@ def _direct_upload_local_image(path: Path) -> str:
 def _resolve_image_to_url_direct(image: str) -> str:
     if image.startswith("http://") or image.startswith("https://"):
         return image
+    tmp = _image_text_to_temp_file(image)
+    if tmp is not None:
+        try:
+            return _direct_upload_local_image(tmp)
+        finally:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
     p = Path(image).expanduser()
     if p.exists() and p.is_file():
         return _direct_upload_local_image(p)
@@ -265,6 +301,15 @@ def _resolve_image_to_url_proxy(image: str) -> str:
     if image.startswith("http://") or image.startswith("https://"):
         # Already public — proxy can feed it straight to /search/image.
         return image
+    tmp = _image_text_to_temp_file(image)
+    if tmp is not None:
+        try:
+            return _proxy_upload_image(tmp)
+        finally:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
     p = Path(image).expanduser()
     if p.exists() and p.is_file():
         return _proxy_upload_image(p)

@@ -11,6 +11,7 @@ import logging
 import mimetypes
 import os
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -42,21 +43,37 @@ def _serper_post(url: str, payload: dict) -> dict:
     return resp.json()
 
 
-def serper_search(query: str, top_k: int) -> list[dict]:
+@lru_cache(maxsize=settings.cache_size)
+def _serper_search_cached(query: str, top_k: int) -> tuple[tuple[tuple[str, Any], ...], ...]:
     data = _serper_post(SERPER_SEARCH_URL, {"q": query, "num": top_k})
-    return list(data.get("organic", []) or [])
+    organic = list(data.get("organic", []) or [])
+    return tuple(tuple(item.items()) for item in organic[:top_k])
+
+
+@lru_cache(maxsize=settings.cache_size)
+def _serper_lens_cached(image_url: str, top_k: int) -> tuple[tuple[tuple[str, Any], ...], ...]:
+    data = _serper_post(SERPER_LENS_URL, {"url": image_url})
+    items = data.get("organic") or data.get("visual_matches") or []
+    return tuple(tuple(item.items()) for item in list(items)[:top_k])
+
+
+@lru_cache(maxsize=settings.cache_size)
+def _jina_fetch_cached(url: str, max_chars: int) -> tuple[str, bool]:
+    return _jina_fetch_uncached(url, max_chars)
+
+
+def serper_search(query: str, top_k: int) -> list[dict]:
+    return [dict(item) for item in _serper_search_cached(query, top_k)]
 
 
 def serper_lens(image_url: str, top_k: int) -> list[dict]:
-    data = _serper_post(SERPER_LENS_URL, {"url": image_url})
-    items = data.get("organic") or data.get("visual_matches") or []
-    return list(items[:top_k])
+    return [dict(item) for item in _serper_lens_cached(image_url, top_k)]
 
 
 # ---------------------------------------------------------------------------
 # Jina Reader
 # ---------------------------------------------------------------------------
-def jina_fetch(url: str, max_chars: int) -> tuple[str, bool]:
+def _jina_fetch_uncached(url: str, max_chars: int) -> tuple[str, bool]:
     """Return (content, truncated). On failure raises (caller decides format)."""
     if not url:
         return "", False
@@ -72,6 +89,10 @@ def jina_fetch(url: str, max_chars: int) -> tuple[str, bool]:
         text = text[:max_chars] + f"\n\n...[truncated at {max_chars} chars]"
         truncated = True
     return text, truncated
+
+
+def jina_fetch(url: str, max_chars: int) -> tuple[str, bool]:
+    return _jina_fetch_cached(url, max_chars)
 
 
 # ---------------------------------------------------------------------------

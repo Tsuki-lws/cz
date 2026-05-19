@@ -4,6 +4,12 @@
 - `search_text(query, top_k=5, fetch=True, max_chars=5000)` — 文搜文（Google → 正文）
 - `search_image(image, top_k=5, fetch=True, max_chars=5000)` — 图搜文（Google Lens → 正文）
 
+`search_image` 的 `image` 支持 4 种输入：
+- `http(s)` 图片 URL
+- 本地图片路径
+- `data:image/...;base64,...`
+- 裸 base64 图片字符串
+
 返回结构统一：
 ```json
 [
@@ -190,6 +196,7 @@ GPU 端：
 | `SEARCH_PROXY_TIMEOUT` | 可选 | 单次 HTTP 调用秒数，默认 120 |
 | `SEARCH_PROXY_VERIFY_SSL` | 可选 | 默认 `true`；遇到自签证书（cloudflared 等）设 `false` |
 | `SEARCH_PROXY_EXTRA_HEADERS` | 可选 | JSON 字符串，例如 `'{"Cookie":"vscode-tkn=..."}'`，给私有 tunnel 带鉴权用 |
+| `SEARCH_PROXY_CACHE_SIZE` | 可选 | search-proxy 内存 LRU 缓存大小，默认 `512`；文本搜索、图搜和 Jina 抓取都会复用缓存 |
 | `SERPER_API_KEY` / `JINA_API_KEY` | 仅直连模式 | 走代理时不需要 |
 
 CPU 端（`search-proxy`）：

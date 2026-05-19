@@ -1,0 +1,7 @@
+search_first_for:
+  - multi_hop
+  - current_fact
+  - named_entity
+image_search_first: true
+avoid_repeated_queries: true
+

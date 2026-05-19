@@ -1,6 +1,6 @@
 # 浏览器工具（browser-service + Playwright）
 
-5 个工具，全部对 LLM 暴露，全部返回 dict / list[dict]，失败统一为 `{ok: false, error: "..."}`：
+默认对 LLM 暴露 5 个浏览器工具，全部返回 dict / list[dict]，失败统一为 `{ok: false, error: "..."}`：
 
 | 工具 | 输入要点 | 主要返回字段 |
 | --- | --- | --- |
@@ -10,7 +10,7 @@
 | `browser_type(selector, text, submit, clear, timeout)` | CSS 选择器 + 文本 | `ok, selector, submitted, current_url, current_title` |
 | `browser_parallel(urls, mode, ...)` | URL 列表，mode∈{navigate,get_text} | `list[dict]`（每条同 navigate / get_text 的字段） |
 
-> 对外签名 / 返回结构与之前的 AIO-Sandbox 版本**完全保持一致**，所以 LLM 的工具 schema 不需要任何改动。
+> 默认 LLM 工具集保持精简：搜索 2 个 + 浏览器 5 个。`browser_get_html` / `browser_scroll` / `browser_screenshot` 只作为底层调试能力保留，不放进默认 schema，避免模型在重复功能里乱选。
 
 ---
 
@@ -46,6 +46,7 @@ LLM ──tool call──▶ tools/browser_tool.py            (host)
 | `SANDBOX_BASE_URL` | `http://localhost:8080` | browser-service 的入口地址 |
 | `SANDBOX_API_TOKEN` | （空） | 如果服务端开了 Bearer 鉴权就设这个 |
 | `SANDBOX_HTTP_TIMEOUT` | `120` | 单次 HTTP 请求的默认超时（秒）|
+| `MAX_BROWSER_PARALLEL_CONCURRENCY` | `100` | `browser_parallel` 允许的最大并发标签页数 |
 
 依赖：
 ```bash
@@ -78,6 +79,11 @@ python -m tools.browser_tool type "input[name=q]" "hello world" --submit
 # 并发（默认 mode=navigate）
 python -m tools.browser_tool parallel https://a.com https://b.com https://c.com
 python -m tools.browser_tool parallel https://a.com https://b.com --mode get_text
+
+# 底层调试命令，不默认暴露给 LLM
+python -m tools.browser_tool get_html --selector body
+python -m tools.browser_tool scroll --direction down --pixels 800
+python -m tools.browser_tool screenshot --save-to /tmp/page.png
 ```
 
 ---

@@ -2,7 +2,7 @@
 
 set -e
 
-API_KEY="sk-LuGd1Za5AI5CF1E6iatpunz1aRRT3tJyvXIeTwlC02Cyibpr"
+API_KEY="sk-wFNMlGQLA48osxpa3UtKYxh5csTp3d0tYlhqpIar7Elo4byM"
 if [ -z "$API_KEY" ] || [ "$API_KEY" = "__API_KEY__" ]; then
   echo "ERROR: API Key not set"
   exit 1

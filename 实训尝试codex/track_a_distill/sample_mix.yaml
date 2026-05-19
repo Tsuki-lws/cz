@@ -1,0 +1,13 @@
+multihop_text:
+  ratio: 0.40
+  datasets: [2wiki_train, hotpotqa, musique]
+visual_knowledge:
+  ratio: 0.30
+  datasets: [ok_vqa, a_okvqa, infoseek]
+open_domain:
+  ratio: 0.20
+  datasets: [natural_questions, triviaqa, beerqa]
+tool_aggregation:
+  ratio: 0.10
+  datasets: [webqa, frames]
+

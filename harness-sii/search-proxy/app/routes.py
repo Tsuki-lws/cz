@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from . import upstream
 from .config import settings
@@ -50,7 +51,7 @@ async def health() -> HealthResp:
 )
 async def search_text(req: SearchTextReq) -> SearchResp:
     try:
-        organic = upstream.serper_search(req.query, req.top_k)
+        organic = await run_in_threadpool(upstream.serper_search, req.query, req.top_k)
     except Exception as exc:  # noqa: BLE001
         return SearchResp(ok=False, error=f"{type(exc).__name__}: {exc}")
 
@@ -65,7 +66,7 @@ async def search_text(req: SearchTextReq) -> SearchResp:
         )
         if req.fetch and url:
             try:
-                content, _ = upstream.jina_fetch(url, req.max_chars)
+                content, _ = await run_in_threadpool(upstream.jina_fetch, url, req.max_chars)
                 hit.content = content
             except Exception as exc:  # noqa: BLE001
                 hit.content = f"[jina-error] {type(exc).__name__}: {exc}"
@@ -78,7 +79,7 @@ async def search_text(req: SearchTextReq) -> SearchResp:
 )
 async def search_image(req: SearchImageReq) -> SearchResp:
     try:
-        items = upstream.serper_lens(req.image_url, req.top_k)
+        items = await run_in_threadpool(upstream.serper_lens, req.image_url, req.top_k)
     except Exception as exc:  # noqa: BLE001
         return SearchResp(ok=False, error=f"{type(exc).__name__}: {exc}")
 
@@ -93,7 +94,7 @@ async def search_image(req: SearchImageReq) -> SearchResp:
         )
         if req.fetch and url:
             try:
-                content, _ = upstream.jina_fetch(url, req.max_chars)
+                content, _ = await run_in_threadpool(upstream.jina_fetch, url, req.max_chars)
                 hit.content = content
             except Exception as exc:  # noqa: BLE001
                 hit.content = f"[jina-error] {type(exc).__name__}: {exc}"
@@ -105,7 +106,7 @@ async def search_image(req: SearchImageReq) -> SearchResp:
 async def fetch_url(req: FetchReq) -> FetchResp:
     """Standalone Jina fetch — handy for manual debugging from the GPU side."""
     try:
-        content, truncated = upstream.jina_fetch(req.url, req.max_chars)
+        content, truncated = await run_in_threadpool(upstream.jina_fetch, req.url, req.max_chars)
         return FetchResp(ok=True, url=req.url, content=content, truncated=truncated)
     except Exception as exc:  # noqa: BLE001
         return FetchResp(
@@ -124,7 +125,8 @@ async def upload_image(file: UploadFile = File(...), filename: str | None = Form
         data = await file.read()
         if not data:
             return UploadResp(ok=False, error="empty file")
-        public_url = upstream.upload_image(
+        public_url = await run_in_threadpool(
+            upstream.upload_image,
             data, filename or file.filename or "image.bin"
         )
         return UploadResp(ok=True, url=public_url)

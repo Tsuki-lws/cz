@@ -143,6 +143,7 @@ class BrowserSandboxClient:
         self,
         selector: Optional[str] = None,
         tab_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> str:
         r = self._request(
             "POST",
@@ -152,6 +153,7 @@ class BrowserSandboxClient:
                 "tab_id": tab_id,
                 "selector": selector,
             },
+            timeout=timeout or self.timeout,
         )
         return r.get("text", "")
 
@@ -159,6 +161,7 @@ class BrowserSandboxClient:
         self,
         selector: Optional[str] = None,
         tab_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> str:
         r = self._request(
             "POST",
@@ -168,6 +171,7 @@ class BrowserSandboxClient:
                 "tab_id": tab_id,
                 "selector": selector,
             },
+            timeout=timeout or self.timeout,
         )
         return r.get("html", "")
 
@@ -197,6 +201,7 @@ class BrowserSandboxClient:
         press_enter: bool = False,
         delay_ms: int = 0,
         tab_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> dict:
         return self._request(
             "POST",
@@ -210,6 +215,7 @@ class BrowserSandboxClient:
                 "press_enter": press_enter,
                 "delay_ms": delay_ms,
             },
+            timeout=timeout or self.timeout,
         )
 
     def scroll(
@@ -217,6 +223,7 @@ class BrowserSandboxClient:
         direction: str = "down",
         pixels: int = 600,
         tab_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> dict:
         return self._request(
             "POST",
@@ -227,12 +234,14 @@ class BrowserSandboxClient:
                 "session_id": self.ensure_session(),
                 "tab_id": tab_id,
             },
+            timeout=timeout or self.timeout,
         )
 
     def eval_js(
         self,
         script: str,
         tab_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> Any:
         r = self._request(
             "POST",
@@ -242,6 +251,7 @@ class BrowserSandboxClient:
                 "session_id": self.ensure_session(),
                 "tab_id": tab_id,
             },
+            timeout=timeout or self.timeout,
         )
         return r.get("result")
 
@@ -258,6 +268,7 @@ class BrowserSandboxClient:
         image_format: str = "png",
         save_to: Optional[str] = None,
         tab_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> bytes:
         r = self._request(
             "POST",
@@ -269,6 +280,7 @@ class BrowserSandboxClient:
                 "selector": selector,
                 "image_format": image_format,
             },
+            timeout=timeout or self.timeout,
         )
         data = base64.b64decode(r.get("image_base64", ""))
         if save_to and data:

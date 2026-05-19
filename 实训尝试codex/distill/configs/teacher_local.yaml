@@ -1,0 +1,9 @@
+backend: sglang
+model: Qwen/Qwen3-32B
+base_url: http://127.0.0.1:30000/v1
+api_key_env: OPENAI_API_KEY
+timeout: 180
+max_retries: 5
+temperature: 0.2
+top_p: 0.95
+max_tokens: 4096

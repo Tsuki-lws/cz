@@ -30,6 +30,7 @@ end so the original session's "current tab" is unchanged.
 from __future__ import annotations
 
 import logging
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Optional
@@ -37,6 +38,7 @@ from typing import Any, Optional
 from sandbox_client import BrowserSandboxClient, get_sandbox
 
 logger = logging.getLogger("harness.tools.browser")
+MAX_BROWSER_PARALLEL_CONCURRENCY = int(os.getenv("MAX_BROWSER_PARALLEL_CONCURRENCY", "100"))
 
 
 # ---------------------------------------------------------------------------
@@ -86,10 +88,15 @@ def _safe_get_text(
     cli: BrowserSandboxClient,
     selector: Optional[str] = None,
     tab_id: Optional[str] = None,
+    timeout: Optional[int] = None,
 ) -> tuple[str, Optional[str]]:
     """Return (text, error_or_None). Selector defaults to whole-body."""
     try:
-        text = cli.get_text(selector=selector, tab_id=tab_id)
+        text = cli.get_text(
+            selector=selector,
+            tab_id=tab_id,
+            timeout=max(1, int(timeout)) if timeout is not None else None,
+        )
         return _clean_text(text), None
     except Exception as exc:  # noqa: BLE001
         return "", f"{type(exc).__name__}: {exc}"
@@ -140,7 +147,7 @@ def browser_navigate(
         "wait_until": wu,
     }
     if include_text:
-        text, text_err = _safe_get_text(cli)
+        text, text_err = _safe_get_text(cli, timeout=timeout)
         if text_err is None:
             txt, truncated = _truncate(text, int(max_text))
             out["text_preview"] = txt
@@ -161,7 +168,7 @@ def browser_get_text(max_chars: int = 5000, timeout: int = 15) -> dict:
     logger.info("browser_get_text max_chars=%d", int(max_chars))
     try:
         cli = get_sandbox()
-        text, text_err = _safe_get_text(cli)
+        text, text_err = _safe_get_text(cli, timeout=timeout)
         if text_err is not None:
             return _err(text_err)
         meta = _safe_title(cli)
@@ -178,6 +185,101 @@ def browser_get_text(max_chars: int = 5000, timeout: int = 15) -> dict:
         # ``total_chars`` is reported pre-truncation so the LLM knows how big
         # the real page is.
         "total_chars": len(text),
+    }
+
+
+def browser_get_html(selector: Optional[str] = None, max_chars: int = 8000, timeout: int = 15) -> dict:
+    """Return current page HTML, optionally scoped to a CSS selector."""
+    logger.info("browser_get_html selector=%r max_chars=%d", selector, int(max_chars))
+    try:
+        cli = get_sandbox()
+        html = cli.get_html(selector=selector, timeout=max(1, int(timeout)))
+        meta = _safe_title(cli)
+    except Exception as exc:  # noqa: BLE001
+        return _err(f"get_html failed: {type(exc).__name__}: {exc}")
+    txt, truncated = _truncate(html, int(max_chars))
+    return {
+        "ok": True,
+        "url": meta.get("url", ""),
+        "title": meta.get("title", ""),
+        "selector": selector or "",
+        "html": txt,
+        "truncated": truncated,
+        "total_chars": len(html),
+    }
+
+
+def browser_scroll(direction: str = "down", pixels: int = 800, timeout: int = 10) -> dict:
+    """Scroll the current page and return a short text preview after scrolling."""
+    direction = direction.lower() if isinstance(direction, str) else "down"
+    if direction in {"left", "right"}:
+        js_pixels = -abs(int(pixels)) if direction == "left" else abs(int(pixels))
+        scroll_script = f"() => {{ window.scrollBy({js_pixels}, 0); return true; }}"
+        service_direction = ""
+    else:
+        service_direction = direction if direction in {"up", "down", "top", "bottom"} else "down"
+    try:
+        cli = get_sandbox()
+        if service_direction:
+            result = cli.scroll(
+                direction=service_direction,
+                pixels=int(pixels),
+                timeout=max(1, int(timeout)),
+            )
+        else:
+            result = {"ok": bool(cli.eval_js(scroll_script, timeout=max(1, int(timeout))))}
+        text, text_err = _safe_get_text(cli)
+        meta = _safe_title(cli)
+    except Exception as exc:  # noqa: BLE001
+        return _err(f"scroll failed: {type(exc).__name__}: {exc}")
+    txt, truncated = _truncate(text, 2000)
+    return {
+        "ok": True,
+        "direction": direction,
+        "pixels": int(pixels),
+        "url": meta.get("url", ""),
+        "title": meta.get("title", ""),
+        "text_preview": "" if text_err else txt,
+        "truncated": False if text_err else truncated,
+        "text_error": text_err,
+        "raw": result,
+    }
+
+
+def browser_screenshot(
+    full_page: bool = False,
+    selector: Optional[str] = None,
+    image_format: str = "png",
+    save_to: Optional[str] = None,
+    timeout: int = 20,
+) -> dict:
+    """Take a screenshot and return metadata plus optional saved path.
+
+    The image bytes are not inlined into the tool result to avoid flooding the
+    model context. Use save_to when a later local image-search step needs it.
+    """
+    fmt = image_format if image_format in {"png", "jpeg"} else "png"
+    try:
+        cli = get_sandbox()
+        data = cli.screenshot(
+            full_page=bool(full_page),
+            selector=selector,
+            image_format=fmt,
+            save_to=save_to,
+            timeout=max(1, int(timeout)),
+        )
+        meta = _safe_title(cli)
+    except Exception as exc:  # noqa: BLE001
+        return _err(f"screenshot failed: {type(exc).__name__}: {exc}")
+    return {
+        "ok": True,
+        "url": meta.get("url", ""),
+        "title": meta.get("title", ""),
+        "selector": selector or "",
+        "full_page": bool(full_page),
+        "image_format": fmt,
+        "bytes": len(data),
+        "saved_to": save_to or "",
     }
 
 
@@ -269,12 +371,12 @@ def browser_type(
             press_enter=bool(submit),
             # 20ms/key matches the previous behaviour (locator.type(delay=20)).
             delay_ms=20,
+            timeout=max(1, int(timeout)),
         )
         meta = _safe_title(cli)
     except Exception as exc:  # noqa: BLE001
         return _err(f"type failed: {type(exc).__name__}: {exc}")
 
-    _ = timeout  # accepted for API compatibility; service uses its own defaults
     return {
         "ok":            True,
         "selector":      selector,
@@ -308,7 +410,7 @@ def _parallel_one(
         title = meta.get("title", "")
         final_url = meta.get("url", url)
 
-        text, text_err = _safe_get_text(cli, tab_id=tab_id)
+        text, text_err = _safe_get_text(cli, tab_id=tab_id, timeout=max(1, timeout_ms // 1000))
 
         if mode == "navigate":
             if text_err is not None:
@@ -365,7 +467,7 @@ def browser_parallel(
         mode:    "navigate" -> {url,title,text_preview,truncated} per item
                  "get_text" -> {url,title,text,truncated,total_chars} per item
         max_chars: per-item character cap. Defaults: 2000 for navigate, 5000 for get_text.
-        max_concurrency: simultaneous tabs (1-8).
+        max_concurrency: simultaneous tabs. Capped by MAX_BROWSER_PARALLEL_CONCURRENCY.
 
     Returns:
         list[dict]; per-item ``{ok: False, url, error}`` on individual failure.
@@ -382,7 +484,7 @@ def browser_parallel(
 
     if max_chars is None:
         max_chars = 2000 if mode == "navigate" else 5000
-    concurrency = max(1, min(int(max_concurrency), 8))
+    concurrency = max(1, min(int(max_concurrency), max(1, MAX_BROWSER_PARALLEL_CONCURRENCY)))
     wu = _normalize_wait_until(wait_until)
     timeout_ms = max(1, int(timeout)) * 1000
 
@@ -435,6 +537,9 @@ if __name__ == "__main__":
 
     p1 = sub.add_parser("navigate"); p1.add_argument("url")
     sub.add_parser("get_text")
+    p_html = sub.add_parser("get_html"); p_html.add_argument("--selector", default=None)
+    p_scroll = sub.add_parser("scroll"); p_scroll.add_argument("--direction", default="down"); p_scroll.add_argument("--pixels", type=int, default=800)
+    p_shot = sub.add_parser("screenshot"); p_shot.add_argument("--full-page", action="store_true"); p_shot.add_argument("--selector", default=None); p_shot.add_argument("--save-to", default=None)
     p3 = sub.add_parser("click");    p3.add_argument("selector")
     p4 = sub.add_parser("type")
     p4.add_argument("selector"); p4.add_argument("text"); p4.add_argument("--submit", action="store_true")
@@ -447,6 +552,12 @@ if __name__ == "__main__":
         pprint.pp(browser_navigate(args.url))
     elif args.cmd == "get_text":
         pprint.pp(browser_get_text())
+    elif args.cmd == "get_html":
+        pprint.pp(browser_get_html(selector=args.selector))
+    elif args.cmd == "scroll":
+        pprint.pp(browser_scroll(direction=args.direction, pixels=args.pixels))
+    elif args.cmd == "screenshot":
+        pprint.pp(browser_screenshot(full_page=args.full_page, selector=args.selector, save_to=args.save_to))
     elif args.cmd == "click":
         pprint.pp(browser_click(args.selector))
     elif args.cmd == "type":

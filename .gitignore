@@ -1,9 +1,10 @@
 # OS / editor
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
 
-# Python
+# Python bytecode / caches
 __pycache__/
 *.py[cod]
 *.pyo
@@ -11,24 +12,71 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv/
 venv/
+envs/
+harness-sii/search-proxy/.venv/
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Local runtime / logs
+# Runtime / logs
 *.log
 *.pid
+*.out
+*.err
+nohup.out
 
-# Project-local caches and generated data
-.global/
-harness-sii/search-proxy/.venv/
-**/trajectories/*.jsonl
-
-# Secrets / env files
+# Secrets / local env files
 .env
 .env.*
 !.env.example
+
+# Local platform caches
+.global/
+
+# Model weights and downloaded datasets
+Qwen3-32B/
+Qwen*/
+Kimi*/
+datasets/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+
+# Large benchmark / generated answer artifacts
+benchmark.csv
+harness-sii/group_*.csv
+harness-sii/group_*.json
+harness-sii/group_*.zip
+group_*.zip
+
+# Agent case files and trajectories
+harness-sii/cases_submit*/
+harness-sii/trajectories_submit*/
+harness-sii/trajectories_smoke/
+harness-sii/trajectories_validate_smoke/
+harness-sii/validation*/
+**/trajectories/*.jsonl
+
+# Validation / experiment outputs
+validation_full_results.tar.gz
+validation_submit_bundle.tar.gz
+validation_submit_bundle/
+experiments*/
+runs/
+reports/
+submissions/
+
+# Local archives
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z

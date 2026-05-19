@@ -20,9 +20,11 @@ Usage (CLI):
 """
 
 import argparse
+import base64
 import json
 import logging
 import os
+import re
 import uuid
 from typing import Optional
 from pathlib import Path
@@ -50,14 +52,41 @@ logger = logging.getLogger("harness.task_runner")
 # ---------------------------------------------------------------------------
 # LLM connection (Sglang OpenAI-compat, two nodes behind Nginx)
 # ---------------------------------------------------------------------------
-LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://127.0.0.1:8000/v1")
-MODEL_NAME   = os.getenv("MODEL_NAME",   "qwen-3.5")
+LLM_BASE_URL = os.getenv(
+    "LLM_BASE_URL",
+    "https://notebook-inspire.sii.edu.cn/ws-7c23bd1d-9bae-4238-803a-737a35480e18/project-39fbffc7-dcca-4fb4-b43a-2f69f72f7e52/user-b260c9e2-91ae-48ff-bfce-dcfd887a0358/vscode/a41611cb-40b3-4a11-9e03-c916019c5521/2a946687-0b65-48c4-af9a-14410787f628/proxy/8000/v1",
+)
+MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen3.5-9B")
 MAX_STEPS    = int(os.getenv("MAX_STEPS", "20"))
 MAX_TOKENS   = int(os.getenv("MAX_TOKENS", "16000"))
 
 # 调试开关：True = 不向 LLM 注册 tools，纯文本对话，便于先验证 LLM 通路
 # 工具实现接好后默认关闭；如需调试 LLM 通路，export DISABLE_TOOLS=1
 DISABLE_TOOLS = os.getenv("DISABLE_TOOLS", "0") == "1"
+
+_XML_TOOL_CALL_RE = re.compile(
+    r"<tool_call>\s*<function=(?P<name>[\w_]+)>\s*(?P<body>.*?)\s*</function>\s*</tool_call>",
+    re.DOTALL,
+)
+_XML_PARAM_RE = re.compile(
+    r"<parameter=(?P<key>[\w_]+)>\s*(?P<value>.*?)\s*</parameter>",
+    re.DOTALL,
+)
+
+
+def _detect_image_mime(image_b64: str) -> str:
+    """Return a conservative MIME type for a base64-encoded benchmark image."""
+    try:
+        raw = base64.b64decode(image_b64[:128], validate=False)
+    except Exception:  # noqa: BLE001
+        return "image/jpeg"
+    if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if raw.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
+        return "image/webp"
+    return "image/jpeg"
 
 # ---------------------------------------------------------------------------
 # Tool schema (OpenAI function-calling format)
@@ -89,18 +118,19 @@ TOOLS_SCHEMA = [
             "name": "search_image",
             "description": (
                 "图搜文：基于 Google Lens (Serper /lens) 的反向图像搜索，并用 "
-                "Jina Reader 抽取结果页面正文。输入必须是 http(s) 图片 URL 。"
+                "Jina Reader 抽取结果页面正文。输入可以是 http(s) 图片 URL、本地路径、"
+                "data:image/...;base64,... 或裸 base64 图片。"
                 "返回 [{rank,title,url,snippet,content}]。"
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "image_url": {"type": "string",  "description": "图片的 http(s) URL"},
+                    "image": {"type": "string",  "description": "图片 URL、本地路径或 base64"},
                     "top_k":     {"type": "integer", "description": "返回条数（1-3）", "default": 1},
                     "fetch":     {"type": "boolean", "description": "是否抓取正文", "default": True},
                     "max_chars": {"type": "integer", "description": "每篇正文截断的最大字符数", "default": 500},
                 },
-                "required": ["image_url"],
+                "required": ["image"],
             },
         },
     },
@@ -203,7 +233,7 @@ TOOLS_SCHEMA = [
                     "wait_until":      {"type": "string",
                                         "enum": ["domcontentloaded", "load", "networkidle"],
                                         "default": "domcontentloaded"},
-                    "max_concurrency": {"type": "integer", "description": "同时打开的标签页数（1-8）", "default": 4},
+                    "max_concurrency": {"type": "integer", "description": "同时打开的标签页数，默认上限由 MAX_BROWSER_PARALLEL_CONCURRENCY 控制", "default": 4},
                     "timeout":         {"type": "integer", "description": "单页超时秒数", "default": 30},
                 },
                 "required": ["urls"],
@@ -217,7 +247,7 @@ TOOLS_SCHEMA = [
 # ---------------------------------------------------------------------------
 TOOL_FN_MAP = {
     "search_text":      lambda a: search_text(**a),
-    "search_image":     lambda a: search_image(**a),
+    "search_image":     lambda a: search_image(a.pop("image_url", None) or a.pop("image", ""), **a),
     "browser_navigate": lambda a: browser_navigate(**a),
     "browser_get_text": lambda a: browser_get_text(**a),
     "browser_click":    lambda a: browser_click(**a),
@@ -225,17 +255,57 @@ TOOL_FN_MAP = {
     "browser_parallel": lambda a: browser_parallel(**a),
 }
 
+
+def _coerce_xml_param_value(value: str):
+    text = value.strip()
+    if text.lower() == "true":
+        return True
+    if text.lower() == "false":
+        return False
+    try:
+        return int(text)
+    except ValueError:
+        return text
+
+
+def _extract_tool_calls_from_reasoning(reasoning_content: str) -> list[dict]:
+    out: list[dict] = []
+    if not reasoning_content:
+        return out
+    for idx, match in enumerate(_XML_TOOL_CALL_RE.finditer(reasoning_content)):
+        name = match.group("name").strip()
+        body = match.group("body")
+        args = {}
+        for p in _XML_PARAM_RE.finditer(body):
+            args[p.group("key").strip()] = _coerce_xml_param_value(p.group("value"))
+        out.append(
+            {
+                "id": f"xml_tool_call_{idx}",
+                "function": {"name": name, "arguments": json.dumps(args, ensure_ascii=False)},
+                "type": "function",
+                "index": idx,
+            }
+        )
+    return out
+
 # ---------------------------------------------------------------------------
 # System prompt
 # ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """你是一个高效、严谨的任务执行 Agent，运行在配备多工具的自动化框架中。
 
-## 行为准则
-1. 每一步先在 <think>...</think> 标签中简述推理，再决定调用工具或直接回答。
-2. 任务完成后输出清晰的最终答案，无需再调用工具。
-3. 若工具返回 ok=False，分析 error，最多重试 2 次同类操作；仍失败则换工具或方法。
-4. 若调用search_image工具，请使用输入图像的在线链接。
-5. 每一步要不调用工具，要不输出最终答案，不能同时输出空的工具调用或者空的内容。
+## 核心要求
+1. 只能使用系统已提供的工具：search_text、search_image、browser_navigate、browser_get_text、browser_click、browser_type、browser_parallel。
+2. 严禁臆造不存在的工具名。
+3. 当你已经得到足够信息时，直接回答，不要继续调用工具。
+4. 最终答案必须尽量简短，只输出问题所求本身，不要附加解释、分析、来源说明、礼貌用语。
+5. 如果输入中包含图片，你必须先基于图片内容直接观察和判断，再决定是否需要额外搜索。
+6. 对于没有在线图片 URL 的题目，不要因为缺少 URL 就忽略图片本身；应先使用视觉理解。
+
+## 工具使用准则
+1. 若工具返回 ok=False，分析 error，最多重试 1 次同类操作；仍失败则换方法。
+2. 不要为了简单常识题强行调用工具。
+3. search_image 仅在你确实需要基于图片做反向搜索时再用。
+4. 每一步要么调用工具，要么直接给出最终答案，不要输出空内容。
 """
 
 
@@ -275,18 +345,28 @@ def run_task(
     logger.info("run_task: task_id=%s", task_id)
 
     traj   = Trajectory(task_id, output_dir=trajectory_dir)
+    # A retry of the same task_id must not append a second system/user block to
+    # the old JSONL. Qwen's OpenAI-compatible API rejects system messages that
+    # appear after non-system turns.
+    if traj.path.exists():
+        traj.path.unlink()
     client = OpenAI(base_url=llm_base_url, api_key="EMPTY")
 
     # ------------------------------------------------------------------ step 0
     # Write system turn
     traj.write(Role.SYSTEM, SYSTEM_PROMPT, step_id=0)
 
-    # Build user message (optionally include image)
-    if image_b64 and image_url:
-        user_content = [
-            {"type": "text",      "text": instruction + "输入图像的在线链接：" + image_url},
-            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
-        ]
+    # Build user message (optionally include image).
+    # Benchmark multimodal rows may contain only base64 image content and no image_url.
+    if image_b64:
+        image_mime = _detect_image_mime(image_b64)
+        image_parts = [{"type": "text", "text": instruction}]
+        if image_url:
+            image_parts[0]["text"] += " 输入图像的在线链接：" + image_url
+        image_parts.append(
+            {"type": "image_url", "image_url": {"url": f"data:{image_mime};base64,{image_b64}"}}
+        )
+        user_content = image_parts
     else:
         user_content = instruction
 
@@ -306,8 +386,8 @@ def run_task(
             model=model_name,
             messages=messages,
             max_tokens=MAX_TOKENS,
-            temperature=1.0,
-            extra_body={"enable_thinking": True},
+            temperature=0.2,
+            extra_body={"enable_thinking": False},
         )
         if not DISABLE_TOOLS:
             request_kwargs["tools"] = TOOLS_SCHEMA
@@ -326,19 +406,34 @@ def run_task(
 
         choice  = response.choices[0]
         msg     = choice.message
-        print(msg)
         content = msg.content or ""
         reasoning_content = msg.reasoning_content or ""
         total_tokens = response.usage.total_tokens or ""
 
+        tool_calls_data = []
+
         # 调试模式下强制忽略 tool_calls（虽然不传 tools 通常不会出现）
         tool_calls = None if DISABLE_TOOLS else msg.tool_calls
+        if not tool_calls and not DISABLE_TOOLS and reasoning_content:
+            xml_tool_calls = _extract_tool_calls_from_reasoning(reasoning_content)
+            if xml_tool_calls:
+                tool_calls_data = xml_tool_calls
+                tool_calls = [
+                    type("ToolCall", (), {
+                        "id": item["id"],
+                        "function": type("Function", (), {
+                            "name": item["function"]["name"],
+                            "arguments": item["function"]["arguments"],
+                        })(),
+                        "type": item["type"],
+                        "index": item["index"],
+                    })()
+                    for item in xml_tool_calls
+                ]
 
         # Write assistant turn
-        tool_calls_data = (
-            [tc.model_dump() for tc in tool_calls]
-            if tool_calls else []
-        )
+        if not tool_calls_data:
+            tool_calls_data = [tc.model_dump() for tc in tool_calls] if tool_calls else []
         
         extra = {}
         
@@ -368,6 +463,7 @@ def run_task(
             break
         
         if not tool_calls and content == "":
+            logger.info("assistant returned empty content without tool calls; retrying next step")
             continue
 
         # -------------------------------------------------------- tool calls
