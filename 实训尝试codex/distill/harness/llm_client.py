@@ -23,6 +23,7 @@ class LLMBackendConfig:
     temperature: float = 0.2
     top_p: float = 0.95
     max_tokens: int = 4096
+    enable_thinking: bool = False
 
     @property
     def api_key(self) -> str:
@@ -56,6 +57,10 @@ class AsyncLLMClient:
             'temperature': self.config.temperature if temperature is None else temperature,
             'top_p': self.config.top_p if top_p is None else top_p,
             'max_tokens': self.config.max_tokens if max_tokens is None else max_tokens,
+            'extra_body': {
+                'enable_thinking': self.config.enable_thinking,
+                'chat_template_kwargs': {'enable_thinking': self.config.enable_thinking},
+            },
         }
         if tools:
             payload['tools'] = tools

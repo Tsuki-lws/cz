@@ -1,0 +1,96 @@
+{
+  "runs": [
+    {
+      "label": "react4096",
+      "count": 99,
+      "accuracy": 0.2222222222222222,
+      "norm_accuracy": 0.25252525252525254,
+      "loose_accuracy": 0.31313131313131315,
+      "failure_counts": {
+        "DATE_YEAR_ERROR": 8,
+        "IMAGE_MISREAD": 27,
+        "COUNTRY_REGION_ERROR": 5,
+        "PARTIAL_MATCH": 6,
+        "CONCEPT_ERROR": 11,
+        "ENTITY_MISIDENTIFIED": 11,
+        "CORRECT": 22,
+        "TOOL_PROTOCOL_ERROR": 2,
+        "LOOPING": 4,
+        "FORMAT_ERROR": 3
+      },
+      "skill_counts": {
+        "verify_date_year": 8,
+        "image_first_then_verify": 27,
+        "normalize_country_region": 5,
+        "answer_normalization": 9,
+        "concept_disambiguation": 11,
+        "entity_identification_then_verify": 11,
+        "none": 22,
+        "tool_protocol_guard": 2,
+        "loop_breaker": 4
+      }
+    },
+    {
+      "label": "react256",
+      "count": 99,
+      "accuracy": 0.20202020202020202,
+      "norm_accuracy": 0.26262626262626265,
+      "loose_accuracy": 0.31313131313131315,
+      "failure_counts": {
+        "DATE_YEAR_ERROR": 8,
+        "IMAGE_MISREAD": 28,
+        "COUNTRY_REGION_ERROR": 5,
+        "FORMAT_ERROR": 6,
+        "ENTITY_MISIDENTIFIED": 10,
+        "CONCEPT_ERROR": 8,
+        "CORRECT": 20,
+        "PARTIAL_MATCH": 5,
+        "TOO_VERBOSE": 9
+      },
+      "skill_counts": {
+        "verify_date_year": 8,
+        "image_first_then_verify": 28,
+        "normalize_country_region": 5,
+        "answer_normalization": 11,
+        "entity_identification_then_verify": 10,
+        "concept_disambiguation": 8,
+        "none": 20,
+        "concise_answer": 9
+      }
+    },
+    {
+      "label": "vqa128",
+      "count": 99,
+      "accuracy": 0.20202020202020202,
+      "norm_accuracy": 0.23232323232323232,
+      "loose_accuracy": 0.26262626262626265,
+      "failure_counts": {
+        "DATE_YEAR_ERROR": 10,
+        "IMAGE_MISREAD": 31,
+        "COUNTRY_REGION_ERROR": 7,
+        "CONCEPT_ERROR": 12,
+        "ENTITY_MISIDENTIFIED": 13,
+        "CORRECT": 20,
+        "PARTIAL_MATCH": 3,
+        "FORMAT_ERROR": 3
+      },
+      "skill_counts": {
+        "verify_date_year": 10,
+        "image_first_then_verify": 31,
+        "normalize_country_region": 7,
+        "concept_disambiguation": 12,
+        "entity_identification_then_verify": 13,
+        "none": 20,
+        "answer_normalization": 6
+      }
+    }
+  ],
+  "common_count": 99,
+  "oracle_exact_accuracy": 0.2828282828282828,
+  "oracle_norm_accuracy": 0.3333333333333333,
+  "only_correct_counts": {
+    "react4096": 2,
+    "react256": 1,
+    "vqa128": 3
+  }
+}

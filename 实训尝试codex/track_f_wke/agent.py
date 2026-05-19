@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+from shared_sii_adapter.external_assist import organize_memory_with_external_model
 from shared_sii_adapter.react_runner import DEFAULT_SYSTEM_PROMPT, run_react_task
 from shared_sii_adapter.types import AgentRunResult, RuntimeConfig
 
@@ -22,7 +23,7 @@ World Knowledge Exploration 策略：
 def run_one(task: dict[str, Any], runtime: RuntimeConfig) -> AgentRunResult:
     store = KnowledgeStore()
     query = str(task.get("instruction") or task.get("question") or "")
-    hits = [] if runtime.benchmark_mode else store.retrieve(query)
+    hits = [] if runtime.benchmark_mode or runtime.disable_memory else store.retrieve(query)
     memory_context = summarize_hits(hits)
     result = run_react_task(
         task,
@@ -31,14 +32,20 @@ def run_one(task: dict[str, Any], runtime: RuntimeConfig) -> AgentRunResult:
         memory_context=memory_context,
         track_name="track_f",
     )
-    result.debug.update({"knowledge_hits": hits, "benchmark_read_only": runtime.benchmark_mode})
-    if runtime.allow_evolution_updates and not runtime.benchmark_mode:
+    assist = organize_memory_with_external_model(
+        runtime=runtime,
+        track_name="track_f",
+        task=task,
+        result=result,
+        local_signal={"knowledge_hits": hits},
+    )
+    result.debug.update({"knowledge_hits": hits, "benchmark_read_only": runtime.benchmark_mode, "external_assist": assist})
+    if runtime.allow_evolution_updates and not runtime.benchmark_mode and not runtime.disable_memory:
         store.add(
             {
                 "topic": query[:200],
-                "lesson": f"pred={result.pred[:200]} tool_calls={result.metrics.get('tool_calls', 0)}",
+                "lesson": assist.get("lesson") or f"pred={result.pred[:200]} tool_calls={result.metrics.get('tool_calls', 0)}",
                 "source": "track_f_run",
             }
         )
     return result
-

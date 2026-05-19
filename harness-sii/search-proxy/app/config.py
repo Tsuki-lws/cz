@@ -31,8 +31,8 @@ class Settings:
     api_token: str = _clean_env_text(os.getenv("PROXY_API_TOKEN", ""))
 
     # Image upload backend used when the GPU side sends a local file
-    # via /upload_image. Currently only `0x0` is supported.
-    image_uploader: str = _clean_env_text(os.getenv("IMAGE_UPLOADER", "0x0"))
+    # via /upload_image. `auto` tries known public uploaders in order.
+    image_uploader: str = _clean_env_text(os.getenv("IMAGE_UPLOADER", "auto"))
 
     # Default HTTP timeouts (seconds) for outbound calls.
     serper_timeout: float = float(os.getenv("SERPER_TIMEOUT", "30"))

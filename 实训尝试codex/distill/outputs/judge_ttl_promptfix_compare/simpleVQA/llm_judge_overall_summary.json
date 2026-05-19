@@ -1,0 +1,20 @@
+[
+  {
+    "track": "vl_teacher_ttl_promptfix",
+    "count": 99,
+    "judged_count": 99,
+    "error_count": 0,
+    "strict_accuracy": 0.1414141414141414,
+    "llm_accuracy": 0.3939393939393939,
+    "avg_confidence": 0.6626262626262626
+  },
+  {
+    "track": "student_qwen35_ttl_promptfix",
+    "count": 99,
+    "judged_count": 99,
+    "error_count": 0,
+    "strict_accuracy": 0.16161616161616163,
+    "llm_accuracy": 0.3434343434343434,
+    "avg_confidence": 0.6631313131313131
+  }
+]

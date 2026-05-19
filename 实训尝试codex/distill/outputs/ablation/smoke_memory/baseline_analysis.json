@@ -1,0 +1,27 @@
+{
+  "label": "baseline",
+  "count": 2,
+  "accuracy": 0,
+  "norm_accuracy": 0,
+  "loose_accuracy": 0,
+  "failure_counts": {
+    "DATE_YEAR_ERROR": 1,
+    "IMAGE_MISREAD": 1
+  },
+  "task_counts": {
+    "date_year": 1,
+    "location_landmark": 1
+  },
+  "activated_skill_counts": {
+    "verify_date_year": 1,
+    "image_first_then_verify": 1
+  },
+  "task_failure_counts": {
+    "date_year": {
+      "DATE_YEAR_ERROR": 1
+    },
+    "location_landmark": {
+      "IMAGE_MISREAD": 1
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "runs": [
+    {
+      "label": "baseline",
+      "count": 2,
+      "accuracy": 0.0,
+      "norm_accuracy": 0.0,
+      "loose_accuracy": 0.0,
+      "failure_counts": {
+        "DATE_YEAR_ERROR": 1,
+        "IMAGE_MISREAD": 1
+      },
+      "skill_counts": {
+        "verify_date_year": 1,
+        "image_first_then_verify": 1
+      }
+    },
+    {
+      "label": "memory",
+      "count": 2,
+      "accuracy": 0.0,
+      "norm_accuracy": 0.0,
+      "loose_accuracy": 0.0,
+      "failure_counts": {
+        "DATE_YEAR_ERROR": 1,
+        "IMAGE_MISREAD": 1
+      },
+      "skill_counts": {
+        "verify_date_year": 1,
+        "image_first_then_verify": 1
+      }
+    }
+  ],
+  "common_count": 2,
+  "oracle_exact_accuracy": 0.0,
+  "oracle_norm_accuracy": 0.0,
+  "only_correct_counts": {
+    "baseline": 0,
+    "memory": 0
+  }
+}

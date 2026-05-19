@@ -15,11 +15,17 @@ class RuntimeConfig:
     temperature: float = 1.0
     enable_thinking: bool = True
     disable_tools: bool = False
+    disable_reflection: bool = False
+    disable_memory: bool = False
+    enable_xml_tool_fallback: bool = True
+    structured_final_answer: bool = True
     output_dir: str = "experiments"
     track_name: str = "baseline"
     group_id: str = "0"
     run_mode: str = "eval"  # train | dev | eval | benchmark
     allow_evolution_updates: bool = True
+    enable_external_assist: bool = False
+    external_assist_max_tokens: int = 512
 
     @property
     def effective_judge_base_url(self) -> str:

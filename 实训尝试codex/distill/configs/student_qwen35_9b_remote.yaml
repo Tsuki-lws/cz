@@ -1,0 +1,9 @@
+backend: sglang
+model: Qwen3.5-9B
+base_url: https://notebook-inspire.sii.edu.cn/ws-7c23bd1d-9bae-4238-803a-737a35480e18/project-39fbffc7-dcca-4fb4-b43a-2f69f72f7e52/user-b260c9e2-91ae-48ff-bfce-dcfd887a0358/vscode/a41611cb-40b3-4a11-9e03-c916019c5521/2a946687-0b65-48c4-af9a-14410787f628/proxy/8000/v1
+api_key_env: OPENAI_API_KEY
+timeout: 180
+max_retries: 5
+temperature: 0.2
+top_p: 0.95
+max_tokens: 4096

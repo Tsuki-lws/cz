@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -53,6 +54,7 @@ def read_table(path: str | Path) -> list[dict[str, Any]]:
         if isinstance(payload, dict) and isinstance(payload.get("data"), list):
             return payload["data"]
         raise ValueError(f"unsupported json dataset shape: {resolved}")
+    csv.field_size_limit(sys.maxsize)
     with resolved.open("r", encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
 
@@ -71,4 +73,3 @@ def write_csv(path: str | Path, rows: list[dict[str, Any]], fieldnames: list[str
         writer.writeheader()
         for row in rows:
             writer.writerow({key: row.get(key, "") for key in fieldnames})
-

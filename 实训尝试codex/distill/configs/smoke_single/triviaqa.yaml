@@ -1,0 +1,14 @@
+seed_datasets:
+- name: triviaqa
+  source: hf
+  path: mandarjoshi/trivia_qa
+  subset: rc
+  split: train
+  question_field: question
+  answer_field: answer
+  limit: 20
+dedup:
+  similarity_threshold: 0.85
+  normalize_lower: true
+  strip_punctuation: true
+test_files: []

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+from shared_sii_adapter.external_assist import organize_memory_with_external_model
 from shared_sii_adapter.react_runner import DEFAULT_SYSTEM_PROMPT, run_react_task
 from shared_sii_adapter.types import AgentRunResult, RuntimeConfig
 
@@ -38,14 +39,22 @@ def run_one(task: dict[str, Any], runtime: RuntimeConfig) -> AgentRunResult:
         track_name="track_b",
     )
     review = review_without_gold(task, result.pred, result.trajectory, runtime)
-    result.debug.update({"manager": manager_state, "plan": plan, "review": review, "memory_hits": memory_hits})
+    assist = organize_memory_with_external_model(
+        runtime=runtime,
+        track_name="track_b",
+        task=task,
+        result=result,
+        local_signal={"manager": manager_state, "review": review},
+    )
+    result.debug.update({"manager": manager_state, "plan": plan, "review": review, "memory_hits": memory_hits, "external_assist": assist})
     if runtime.allow_evolution_updates and not runtime.benchmark_mode:
         memory.add(
             {
                 "index": result.index,
                 "task_type": manager_state["task_type"],
-                "summary": f"type={manager_state['task_type']} pred={result.pred[:100]} pass={review.get('pass')}",
+                "summary": assist.get("lesson") or f"type={manager_state['task_type']} pred={result.pred[:100]} pass={review.get('pass')}",
                 "review": review,
+                "external_assist": assist,
             }
         )
     return result

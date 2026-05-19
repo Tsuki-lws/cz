@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+from shared_sii_adapter.external_assist import organize_memory_with_external_model
 from shared_sii_adapter.react_runner import DEFAULT_SYSTEM_PROMPT, run_react_task
 from shared_sii_adapter.types import AgentRunResult, RuntimeConfig
 
@@ -16,5 +17,8 @@ DISTILL_PROMPT = DEFAULT_SYSTEM_PROMPT + """
 
 
 def run_one(task: dict[str, Any], runtime: RuntimeConfig) -> AgentRunResult:
-    return run_react_task(task, replace(runtime, track_name="track_a"), system_prompt=DISTILL_PROMPT, track_name="track_a")
-
+    result = run_react_task(task, replace(runtime, track_name="track_a"), system_prompt=DISTILL_PROMPT, track_name="track_a")
+    assist = organize_memory_with_external_model(runtime=runtime, track_name="track_a", task=task, result=result)
+    if assist:
+        result.debug["external_assist"] = assist
+    return result

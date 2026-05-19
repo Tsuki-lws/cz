@@ -1,0 +1,24 @@
+{
+  "distill_sft_v1": {
+    "file_name": "distill_sft_v1.json",
+    "formatting": "alpaca",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output",
+      "images": "images"
+    }
+  },
+  "distill_dpo_v1": {
+    "file_name": "distill_dpo_v1.json",
+    "formatting": "alpaca",
+    "ranking": true,
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "chosen": "chosen",
+      "rejected": "rejected",
+      "images": "images"
+    }
+  }
+}

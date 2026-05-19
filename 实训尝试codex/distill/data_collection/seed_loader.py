@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from pathlib import Path
 from typing import Any
 
 from datasets import load_dataset
+from PIL import Image
 
 from distill.common import as_text, extract_question_field, load_yaml, normalize_text, read_json, read_jsonl, write_json, write_jsonl
 
@@ -31,14 +33,67 @@ def load_test_questions(paths: list[str], *, lower: bool, strip_punctuation: boo
 
 def record_to_seed(dataset_name: str, idx: int, row: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
     image_value = row.get(spec.get('image_field', ''), None) if spec.get('image_field') else None
-    return {
+    seed = {
         'id': f'{dataset_name}-{idx}',
         'source_dataset': dataset_name,
         'question': as_text(row.get(spec['question_field'])),
         'answer': as_text(row.get(spec['answer_field'])),
-        'image': as_text(image_value),
         'metadata': {'raw_index': idx},
     }
+    if image_value is not None:
+        image_payload = normalize_image_value(image_value, dataset_name=dataset_name, idx=idx)
+        seed.update(image_payload)
+    else:
+        seed['image'] = ''
+    return seed
+
+
+def normalize_image_value(image_value: Any, *, dataset_name: str, idx: int) -> dict[str, str]:
+    if isinstance(image_value, str):
+        text = image_value.strip()
+        if text.startswith(('http://', 'https://')):
+            return {'image': text, 'image_url': text, 'image_path': '', 'image_b64': ''}
+        return {'image': text, 'image_url': '', 'image_path': text if Path(text).exists() else '', 'image_b64': ''}
+
+    save_path = Path('distill/data/cache/images') / dataset_name / f'{idx}.jpg'
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(image_value, dict):
+        for key in ('path', 'file_path', 'filename'):
+            value = image_value.get(key)
+            if value and Path(str(value)).exists():
+                text = str(value)
+                return {'image': text, 'image_url': '', 'image_path': text, 'image_b64': ''}
+        for key in ('bytes', 'data'):
+            value = image_value.get(key)
+            if isinstance(value, (bytes, bytearray)):
+                save_path.write_bytes(bytes(value))
+                return {'image': str(save_path), 'image_url': '', 'image_path': str(save_path), 'image_b64': ''}
+        return {'image': as_text(image_value), 'image_url': '', 'image_path': '', 'image_b64': ''}
+
+    if isinstance(image_value, Image.Image):
+        image_value.save(save_path, format='JPEG')
+        return {'image': str(save_path), 'image_url': '', 'image_path': str(save_path), 'image_b64': ''}
+
+    if hasattr(image_value, 'save'):
+        try:
+            image_value.save(save_path)
+            return {'image': str(save_path), 'image_url': '', 'image_path': str(save_path), 'image_b64': ''}
+        except Exception:  # noqa: BLE001
+            pass
+
+    if isinstance(image_value, (bytes, bytearray)):
+        save_path.write_bytes(bytes(image_value))
+        return {'image': str(save_path), 'image_url': '', 'image_path': str(save_path), 'image_b64': ''}
+
+    text = as_text(image_value)
+    try:
+        raw = base64.b64decode(text, validate=False)
+        if raw:
+            return {'image': text, 'image_url': '', 'image_path': '', 'image_b64': text}
+    except Exception:  # noqa: BLE001
+        pass
+    return {'image': text, 'image_url': '', 'image_path': '', 'image_b64': ''}
 
 
 def load_seed_records(config: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -52,11 +107,19 @@ def load_seed_records(config: dict[str, Any]) -> tuple[list[dict[str, Any]], dic
     seen_questions: set[str] = set()
 
     for spec in config.get('seed_datasets', []):
-        dataset = load_dataset(spec['path'], spec.get('subset'), split=spec.get('split', 'train'))
-        limit = int(spec.get('limit', len(dataset)))
         dataset_name = spec['name']
         dataset_kept = 0
         dataset_dropped = 0
+        try:
+            dataset = load_dataset(spec['path'], spec.get('subset'), split=spec.get('split', 'train'))
+        except Exception as exc:  # noqa: BLE001
+            stats['datasets'][dataset_name] = {
+                'kept': 0,
+                'dropped_vs_tests': 0,
+                'error': str(exc),
+            }
+            continue
+        limit = int(spec.get('limit', len(dataset)))
 
         for idx, row in enumerate(dataset):
             if idx >= limit:

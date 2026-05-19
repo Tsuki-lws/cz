@@ -1,6 +1,6 @@
 stage: dpo
 do_train: true
-model_name_or_path: distill/outputs/sft_v2
+model_name_or_path: distill/outputs/sft_v1
 template: qwen
 dataset: distill_dpo_v1
 dataset_dir: distill/data/final

@@ -1,0 +1,20 @@
+{"id": "triviaqa-0", "source_dataset": "triviaqa", "question": "Which American-born Sinclair won the Nobel Prize for Literature in 1930?", "answer": "Sinclair Lewis", "metadata": {"raw_index": 0}, "image": ""}
+{"id": "triviaqa-1", "source_dataset": "triviaqa", "question": "Where in England was Dame Judi Dench born?", "answer": "York", "metadata": {"raw_index": 1}, "image": ""}
+{"id": "triviaqa-2", "source_dataset": "triviaqa", "question": "In which decade did Billboard magazine first publish and American hit chart?", "answer": "30s", "metadata": {"raw_index": 2}, "image": ""}
+{"id": "triviaqa-3", "source_dataset": "triviaqa", "question": "From which country did Angola achieve independence in 1975?", "answer": "Portugal", "metadata": {"raw_index": 3}, "image": ""}
+{"id": "triviaqa-4", "source_dataset": "triviaqa", "question": "Which city does David Soul come from?", "answer": "Chicago", "metadata": {"raw_index": 4}, "image": ""}
+{"id": "triviaqa-5", "source_dataset": "triviaqa", "question": "Who won Super Bowl XX?", "answer": "Chicago Bears", "metadata": {"raw_index": 5}, "image": ""}
+{"id": "triviaqa-6", "source_dataset": "triviaqa", "question": "Which was the first European country to abolish capital punishment?", "answer": "Norway", "metadata": {"raw_index": 6}, "image": ""}
+{"id": "triviaqa-7", "source_dataset": "triviaqa", "question": "In which country did he widespread use of ISDN begin in 1988?", "answer": "Japan", "metadata": {"raw_index": 7}, "image": ""}
+{"id": "triviaqa-8", "source_dataset": "triviaqa", "question": "What is Bruce Willis' real first name?", "answer": "Walter", "metadata": {"raw_index": 8}, "image": ""}
+{"id": "triviaqa-9", "source_dataset": "triviaqa", "question": "Which William wrote the novel Lord Of The Flies?", "answer": "Golding", "metadata": {"raw_index": 9}, "image": ""}
+{"id": "triviaqa-10", "source_dataset": "triviaqa", "question": "Which innovation for the car was developed by Prince Henry of Prussia in 1911?", "answer": "Windshield wipers", "metadata": {"raw_index": 10}, "image": ""}
+{"id": "triviaqa-11", "source_dataset": "triviaqa", "question": "How is musician William Lee Conley better known?", "answer": "Big Bill Broonzy", "metadata": {"raw_index": 11}, "image": ""}
+{"id": "triviaqa-12", "source_dataset": "triviaqa", "question": "How is Joan Molinsky better known?", "answer": "Joan Rivers", "metadata": {"raw_index": 12}, "image": ""}
+{"id": "triviaqa-13", "source_dataset": "triviaqa", "question": "In which branch of the arts is Patricia Neary famous?", "answer": "Ballet", "metadata": {"raw_index": 13}, "image": ""}
+{"id": "triviaqa-14", "source_dataset": "triviaqa", "question": "Which country is Europe's largest silk producer?", "answer": "Italy", "metadata": {"raw_index": 14}, "image": ""}
+{"id": "triviaqa-15", "source_dataset": "triviaqa", "question": "The VS-300 was a type of what?", "answer": "Helicopter", "metadata": {"raw_index": 15}, "image": ""}
+{"id": "triviaqa-16", "source_dataset": "triviaqa", "question": "At which university did Joseph Goebbels become a doctor of philosophy?", "answer": "Heidelberg", "metadata": {"raw_index": 16}, "image": ""}
+{"id": "triviaqa-17", "source_dataset": "triviaqa", "question": "Which prince is Queen Elizabeth II's youngest son?", "answer": "Edward", "metadata": {"raw_index": 17}, "image": ""}
+{"id": "triviaqa-18", "source_dataset": "triviaqa", "question": "When did the founder of Jehovah's Witnesses say the world would end?", "answer": "1914", "metadata": {"raw_index": 18}, "image": ""}
+{"id": "triviaqa-19", "source_dataset": "triviaqa", "question": "Who found the remains of the Titanic?", "answer": "Robert Ballard", "metadata": {"raw_index": 19}, "image": ""}

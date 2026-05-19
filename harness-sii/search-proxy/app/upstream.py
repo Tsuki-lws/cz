@@ -11,6 +11,7 @@ import logging
 import mimetypes
 import os
 import tempfile
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -98,12 +99,47 @@ def jina_fetch(url: str, max_chars: int) -> tuple[str, bool]:
 # ---------------------------------------------------------------------------
 # Image hosting (used by the upload endpoint when GPU side has only a local file)
 # ---------------------------------------------------------------------------
-def upload_image(file_bytes: bytes, filename: str) -> str:
-    if settings.image_uploader != "0x0":
-        raise RuntimeError(
-            f"Unsupported IMAGE_UPLOADER={settings.image_uploader!r}"
+def _upload_via_0x0(tmp_path: str, filename: str, mime: str) -> str:
+    with open(tmp_path, "rb") as fh:
+        files = {"file": (filename, fh, mime)}
+        headers = {"User-Agent": "kimi-agent-harness/search-proxy"}
+        resp = requests.post(
+            "https://0x0.st",
+            files=files,
+            headers=headers,
+            timeout=settings.upload_timeout,
         )
+    resp.raise_for_status()
+    url = resp.text.strip()
+    if not url.startswith("http"):
+        raise RuntimeError(f"Unexpected 0x0.st response: {url!r}")
+    return url
 
+
+def _upload_via_uguu(tmp_path: str, filename: str, mime: str) -> str:
+    with open(tmp_path, "rb") as fh:
+        files = {"files[]": (filename, fh, mime)}
+        headers = {"User-Agent": "kimi-agent-harness/search-proxy"}
+        resp = requests.post(
+            "https://uguu.se/upload",
+            files=files,
+            headers=headers,
+            timeout=settings.upload_timeout,
+        )
+    resp.raise_for_status()
+    data = resp.json()
+    if not data.get("success"):
+        raise RuntimeError(f"Unexpected uguu response: {data!r}")
+    files_data = data.get("files") or []
+    if not files_data or not isinstance(files_data, list):
+        raise RuntimeError(f"uguu returned no files: {data!r}")
+    url = str((files_data[0] or {}).get("url") or "").replace("\\/", "/")
+    if not url.startswith("http"):
+        raise RuntimeError(f"Unexpected uguu url: {url!r}")
+    return url
+
+
+def upload_image(file_bytes: bytes, filename: str) -> str:
     # Persist to a temp file so we can hand a name + content-type to multipart.
     suffix = Path(filename).suffix or ""
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -112,21 +148,31 @@ def upload_image(file_bytes: bytes, filename: str) -> str:
     try:
         mime, _ = mimetypes.guess_type(filename)
         mime = mime or "application/octet-stream"
-        with open(tmp_path, "rb") as fh:
-            files = {"file": (filename, fh, mime)}
-            headers = {"User-Agent": "kimi-agent-harness/search-proxy"}
-            resp = requests.post(
-                "https://0x0.st",
-                files=files,
-                headers=headers,
-                timeout=settings.upload_timeout,
-            )
-        resp.raise_for_status()
-        url = resp.text.strip()
-        if not url.startswith("http"):
-            raise RuntimeError(f"Unexpected 0x0.st response: {url!r}")
-        logger.info("Uploaded %s -> %s", filename, url)
-        return url
+        uploader = settings.image_uploader.lower()
+        if uploader == "0x0":
+            order = ("0x0",)
+        elif uploader == "uguu":
+            order = ("uguu",)
+        elif uploader == "auto":
+            order = ("uguu", "0x0")
+        else:
+            raise RuntimeError(f"Unsupported IMAGE_UPLOADER={settings.image_uploader!r}")
+
+        errors: list[str] = []
+        for backend in order:
+            try:
+                if backend == "0x0":
+                    url = _upload_via_0x0(tmp_path, filename, mime)
+                elif backend == "uguu":
+                    url = _upload_via_uguu(tmp_path, filename, mime)
+                else:
+                    raise RuntimeError(f"unknown upload backend: {backend}")
+                logger.info("Uploaded %s via %s -> %s", filename, backend, url)
+                return url
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"{backend}: {type(exc).__name__}: {exc}")
+                logger.warning("upload via %s failed for %s: %s", backend, filename, exc)
+        raise RuntimeError("; ".join(errors))
     finally:
         try:
             os.unlink(tmp_path)

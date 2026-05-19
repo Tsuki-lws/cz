@@ -14,8 +14,8 @@ def write_submission(results: list[AgentRunResult], output_dir: str | Path, grou
     csv_path = out / f"group_{group_id}.csv"
     json_path = out / f"group_{group_id}.json"
     zip_path = out / f"group_{group_id}.zip"
-    rows = [{"index": r.index, "answer": r.pred} for r in results]
-    write_csv(csv_path, rows, fieldnames=["index", "answer"])
+    rows = [{"problem": r.instruction, "image": r.image, "answer": r.pred} for r in results]
+    write_csv(csv_path, rows, fieldnames=["problem", "image", "answer"])
     payload = [
         {
             "index": r.index,
@@ -32,4 +32,3 @@ def write_submission(results: list[AgentRunResult], output_dir: str | Path, grou
         zf.write(csv_path, arcname=csv_path.name)
         zf.write(json_path, arcname=json_path.name)
     return {"csv": str(csv_path), "json": str(json_path), "zip": str(zip_path)}
-

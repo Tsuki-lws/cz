@@ -1,0 +1,14 @@
+seed_datasets:
+- name: a_okvqa
+  source: hf
+  path: HuggingFaceM4/A-OKVQA
+  split: train
+  question_field: question
+  answer_field: direct_answers
+  image_field: image
+  limit: 20
+dedup:
+  similarity_threshold: 0.85
+  normalize_lower: true
+  strip_punctuation: true
+test_files: []

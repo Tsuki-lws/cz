@@ -13,6 +13,7 @@ PROJECT_ROOT = ROOT.parent
 DATASETS = {
     "2wiki": PROJECT_ROOT / "datasets" / "2wiki.jsonl",
     "simpleVQA": PROJECT_ROOT / "datasets" / "simpleVQA" / "SimpleVQA.jsonl",
+    "benchmark": PROJECT_ROOT / "benchmark.csv",
 }
 TRACKS = ["track_a", "track_b", "track_c", "track_d", "track_e", "track_f"]
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "runs" / "eval"
@@ -61,6 +62,13 @@ def run_one(dataset: str, track: str, args: argparse.Namespace, env: dict[str, s
         "--max-tokens",
         str(args.max_tokens),
     ]
+    if args.score_mode:
+        cmd.extend(["--score-mode", args.score_mode])
+    if args.judge_concurrency:
+        cmd.extend(["--judge-concurrency", str(args.judge_concurrency)])
+    if args.enable_external_assist:
+        cmd.append("--enable-external-assist")
+        cmd.extend(["--external-assist-max-tokens", str(args.external_assist_max_tokens)])
     if args.limit:
         cmd.extend(["--limit", str(args.limit)])
     if args.write_submission:
@@ -82,6 +90,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=4096)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--run-mode", default="dev", choices=["train", "dev", "eval", "benchmark"])
+    parser.add_argument("--score-mode", default="llm", choices=["strict", "llm"])
+    parser.add_argument("--judge-concurrency", type=int, default=16)
+    parser.add_argument("--enable-external-assist", action="store_true")
+    parser.add_argument("--external-assist-max-tokens", type=int, default=512)
     parser.add_argument("--write-submission", action="store_true")
     return parser.parse_args()
 
@@ -97,7 +109,10 @@ def main() -> int:
     env = os.environ.copy()
     env.setdefault("LLM_BASE_URL", DEFAULT_LLM_BASE_URL)
     env.setdefault("MODEL_NAME", "Qwen3.5-9B")
-    env.setdefault("SEARCH_PROXY_URL", "http://127.0.0.1:1227")
+    # Empty SEARCH_PROXY_URL selects direct online Serper/Jina mode in
+    # harness-sii/tools/search_tool.py. Users can still export a proxy URL
+    # explicitly when they want to route through the shared search service.
+    env.setdefault("SEARCH_PROXY_URL", "")
     env.setdefault("SANDBOX_BASE_URL", "http://127.0.0.1:8080")
 
     failures = 0

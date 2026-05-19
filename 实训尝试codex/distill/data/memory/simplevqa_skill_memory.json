@@ -1,0 +1,413 @@
+{
+  "skills": [
+    {
+      "name": "image_first_then_verify",
+      "priority": 86,
+      "count": 86,
+      "applies_to": [
+        "other",
+        "location_landmark"
+      ],
+      "instruction": "For landmarks, objects, posters, and visual entities, identify the visual target first; if uncertain, prefer a vision teacher or top-k candidates before finalizing.",
+      "avoid": "Do not guess a famous-looking landmark from a weak visual match.",
+      "examples": [
+        {
+          "index": 1,
+          "question": "What is the name of this bridge?",
+          "gold": "Bathampton Toll Bridge",
+          "pred": "Lacock Bridge",
+          "failure_type": "IMAGE_MISREAD"
+        },
+        {
+          "index": 5,
+          "question": "What is the name of this fortress?",
+          "gold": "Kalamita fortress",
+          "pred": "Chufut-Kale",
+          "failure_type": "IMAGE_MISREAD"
+        },
+        {
+          "index": 15,
+          "question": "图中的塔2015年获得第56届什么奖项？",
+          "gold": "BCS（建筑承包商协会）奖",
+          "pred": "日本建筑学会奖",
+          "failure_type": "IMAGE_MISREAD"
+        },
+        {
+          "index": 20,
+          "question": "这个人是谁？",
+          "gold": "Benedict Cumberbatch",
+          "pred": "本尼迪克特·康伯巴奇（Benedict Cumberbatch）",
+          "failure_type": "IMAGE_MISREAD"
+        },
+        {
+          "index": 21,
+          "question": "这是哪个地标？",
+          "gold": "埃及金字塔",
+          "pred": "吉萨金字塔群（Giza Pyramids）",
+          "failure_type": "IMAGE_MISREAD"
+        }
+      ]
+    },
+    {
+      "name": "entity_identification_then_verify",
+      "priority": 34,
+      "count": 34,
+      "applies_to": [
+        "entity_name"
+      ],
+      "instruction": "For person/book/author questions, first identify the entity, then answer the requested attribute such as appointer, disease, date, or role.",
+      "avoid": "Do not answer the attribute before the entity is reliable.",
+      "examples": [
+        {
+          "index": 7,
+          "question": "图中这本书的作者死于什么疾病？",
+          "gold": "霍乱",
+          "pred": "肺结核",
+          "failure_type": "ENTITY_MISIDENTIFIED"
+        },
+        {
+          "index": 11,
+          "question": "图中的人物是谁？",
+          "gold": "艾维·莱德拜特·李（Ivy Ledbetter Lee）",
+          "pred": "托马斯·伍德罗·威尔逊",
+          "failure_type": "ENTITY_MISIDENTIFIED"
+        },
+        {
+          "index": 29,
+          "question": "The person in the picture worked as a flight attendant until 1971. What's her name?",
+          "gold": "Jóhanna Sigurðardóttir",
+          "pred": "Mary Creagh",
+          "failure_type": "ENTITY_MISIDENTIFIED"
+        },
+        {
+          "index": 33,
+          "question": "Who is the developer of the science index in the picture?",
+          "gold": "韦恩·帕默尔（Wayne Palmer）",
+          "pred": "Wayne Palmer",
+          "failure_type": "ENTITY_MISIDENTIFIED"
+        },
+        {
+          "index": 51,
+          "question": "The computer scientist who invented the algorithm shown in the diagram was a professor in the mathematics department of which university?",
+          "gold": "埃因霍温理工大学（Technische Hogeschool Eindhoven）",
+          "pred": "Eindhoven University of Technology",
+          "failure_type": "ENTITY_MISIDENTIFIED"
+        }
+      ]
+    },
+    {
+      "name": "concept_disambiguation",
+      "priority": 31,
+      "count": 31,
+      "applies_to": [
+        "type_concept",
+        "visual_attribute"
+      ],
+      "instruction": "For category, relation, style, family, or disease questions, choose the most specific concept that answers the exact wording.",
+      "avoid": "Do not return a broad superclass when the question expects a specific label.",
+      "examples": [
+        {
+          "index": 6,
+          "question": "在自然界中，这两个生物之间的关系是什么？",
+          "gold": "互利共生",
+          "pred": "这两个生物之间的关系是互利共生（mutualism）。鳄鱼张开嘴让白胸苦恶鸟（或类似的食鱼鸟）进入其口腔，鸟会吃掉鳄鱼牙齿和舌头上的寄生虫（如蜱虫），从而帮助鳄鱼清洁，同时鸟也获得了食物。这是一种典型的清洁共生关系。",
+          "failure_type": "CONCEPT_ERROR"
+        },
+        {
+          "index": 8,
+          "question": "这张图片属于哪个类别？",
+          "gold": "医学CT图像",
+          "pred": "医学影像 - 腹部CT扫描",
+          "failure_type": "CONCEPT_ERROR"
+        },
+        {
+          "index": 18,
+          "question": "The third nebula in the first row from left to right was first discovered by which astronomer?",
+          "gold": "卡罗琳·赫歇尔（Caroline Lucretia Herschel）",
+          "pred": "William Herschel",
+          "failure_type": "CONCEPT_ERROR"
+        },
+        {
+          "index": 27,
+          "question": "在自然界中，这两种生物之间的关系是什么？",
+          "gold": "捕食关系",
+          "pred": "捕食者与猎物的关系",
+          "failure_type": "CONCEPT_ERROR"
+        },
+        {
+          "index": 28,
+          "question": "这是什么工具？",
+          "gold": "地漏",
+          "pred": "这是一个地漏（floor drain），通常安装在浴室、厨房或卫生间的地面，用于排水。图中显示的是一个金属材质的圆形地漏盖，带有长条形格栅，嵌入在灰色瓷砖地面中。",
+          "failure_type": "CONCEPT_ERROR"
+        }
+      ]
+    },
+    {
+      "name": "verify_date_year",
+      "priority": 26,
+      "count": 26,
+      "applies_to": [
+        "date_year"
+      ],
+      "instruction": "For date/year questions, verify the entity-year pair and output only the year/date span.",
+      "avoid": "Do not infer a year from visual style alone.",
+      "examples": [
+        {
+          "index": 0,
+          "question": "图中人物是哪一年因肺结核去世的？",
+          "gold": "1934年",
+          "pred": "1946",
+          "failure_type": "DATE_YEAR_ERROR"
+        },
+        {
+          "index": 14,
+          "question": "图中这个高坝是哪一年完工的？",
+          "gold": "1970年",
+          "pred": "1935",
+          "failure_type": "DATE_YEAR_ERROR"
+        },
+        {
+          "index": 16,
+          "question": "图中这个人在哪一年成为威斯康星州的参议员？",
+          "gold": "1946年",
+          "pred": "1947年",
+          "failure_type": "DATE_YEAR_ERROR"
+        },
+        {
+          "index": 25,
+          "question": "In what year were the chemicals shown in the picture first discovered?",
+          "gold": "1963",
+          "pred": "Insufficient information to determine the discovery year of the chemical shown.",
+          "failure_type": "DATE_YEAR_ERROR"
+        },
+        {
+          "index": 35,
+          "question": "What year was the Lego set in the picture released?",
+          "gold": "2002",
+          "pred": "2013",
+          "failure_type": "DATE_YEAR_ERROR"
+        }
+      ]
+    },
+    {
+      "name": "answer_normalization",
+      "priority": 26,
+      "count": 26,
+      "applies_to": [
+        "other",
+        "entity_name",
+        "location_landmark",
+        "country_region",
+        "date_year",
+        "type_concept"
+      ],
+      "instruction": "Output the minimal answer span with no explanation, parentheses, citations, or extra qualifiers.",
+      "avoid": "Do not include surrounding sentences when a short answer is enough.",
+      "examples": [
+        {
+          "index": 4,
+          "question": "图中的报纸是哪一年正式建立的？",
+          "gold": "1998",
+          "pred": "1998年",
+          "failure_type": "PARTIAL_MATCH"
+        },
+        {
+          "index": 53,
+          "question": "绿色的蔬菜最初产自哪个国家？",
+          "gold": "意大利",
+          "pred": "西兰花最初产自地中海地区，特别是意大利和希腊一带。",
+          "failure_type": "PARTIAL_MATCH"
+        },
+        {
+          "index": 64,
+          "question": "图中这是一种什么建筑风格？",
+          "gold": "巴洛克",
+          "pred": "巴洛克风格",
+          "failure_type": "PARTIAL_MATCH"
+        },
+        {
+          "index": 66,
+          "question": "图中这本短歌集共收录多少首短歌？",
+          "gold": "551",
+          "pred": "551首",
+          "failure_type": "PARTIAL_MATCH"
+        },
+        {
+          "index": 67,
+          "question": "将一块钠放入图片所示液体中会产生什么气体？",
+          "gold": "氢气。",
+          "pred": "氢气",
+          "failure_type": "FORMAT_ERROR"
+        }
+      ]
+    },
+    {
+      "name": "normalize_country_region",
+      "priority": 17,
+      "count": 17,
+      "applies_to": [
+        "country_region"
+      ],
+      "instruction": "For country or region questions, verify origin carefully and normalize common aliases such as UK/United Kingdom and USA/United States.",
+      "avoid": "Do not confuse filming location, nationality, origin, and current location.",
+      "examples": [
+        {
+          "index": 2,
+          "question": "图中运动起源于哪个国家？",
+          "gold": "法国",
+          "pred": "英国",
+          "failure_type": "COUNTRY_REGION_ERROR"
+        },
+        {
+          "index": 3,
+          "question": "What country or region is this movie originated from?",
+          "gold": "UK",
+          "pred": "United Kingdom",
+          "failure_type": "COUNTRY_REGION_ERROR"
+        },
+        {
+          "index": 22,
+          "question": "From which country or region does this movie originate?",
+          "gold": "USA",
+          "pred": "United Kingdom",
+          "failure_type": "COUNTRY_REGION_ERROR"
+        },
+        {
+          "index": 54,
+          "question": "图中展示的是哪个意大利地区的风景？",
+          "gold": "翁布里亚",
+          "pred": "托斯卡纳（Tuscany）",
+          "failure_type": "COUNTRY_REGION_ERROR"
+        },
+        {
+          "index": 92,
+          "question": "What country or region is this movie from?",
+          "gold": "USA",
+          "pred": "Sierra Leone",
+          "failure_type": "COUNTRY_REGION_ERROR"
+        }
+      ]
+    },
+    {
+      "name": "concise_answer",
+      "priority": 9,
+      "count": 9,
+      "applies_to": [
+        "date_year",
+        "entity_name",
+        "location_landmark",
+        "type_concept",
+        "other"
+      ],
+      "instruction": "Use direct answer mode and keep the final answer under one short line unless the task asks otherwise.",
+      "avoid": "Do not write bullet points or analysis in benchmark answers.",
+      "examples": [
+        {
+          "index": 24,
+          "question": "Where is this location?",
+          "gold": "Marilao Church",
+          "pred": "Based on the image, this appears to be a church in a tropical or subtropical region, possibly in Latin America or Southeast Asia. The pink facade and white dome are distinctive features that could help identify the specific location. More information is needed to determine the exact location.",
+          "failure_type": "TOO_VERBOSE"
+        },
+        {
+          "index": 25,
+          "question": "In what year were the chemicals shown in the picture first discovered?",
+          "gold": "1963",
+          "pred": "The image shows the chemical structure of **chitin oligosaccharide**, specifically a trimer of N-acetylglucosamine units linked by β(1→4) glycosidic bonds — this is a fragment of **chitin**, a polysaccharide found in the exoskeletons of arthropods and cell walls of fungi.\n\nHowever, the question asks: “In what year were the chemicals shown in the picture first discovered?”\n\nThe monomer unit is **N-acetylglucosamine (GlcNAc)**, and the polymer is **chitin**.\n\n- **Chitin** was first isolated and described in **1811** by **Henri Braconnot**, who obtained it from crab shells.\n- **N-acetylglucosamine** was later identified as the monomer of chitin. It was first synthesized and characterized in the mid-19th century, but its identification as the building block of chitin came with the structural elucidation of chitin in the 20th century.\n\nBut since the image depicts a **chitin oligomer** (a short chain of GlcNAc units), and chitin itself is the primary substance represented, we should",
+          "failure_type": "TOO_VERBOSE"
+        },
+        {
+          "index": 30,
+          "question": "图中这个植物属于哪一个植物目？",
+          "gold": "天门冬目",
+          "pred": "根据图像中植物的形态特征：\n\n- 花朵为鲜艳的蓝紫色，呈星形，6枚花瓣状花被片；\n- 花被片上有明显的纵向条纹；\n- 雄蕊6枚，花丝细长，花药黄色；\n- 植株具有肉质叶片（背景中可见灰绿色肉质叶），符合石蒜科或葱科某些属的特征；\n- 整体花序和花型与**葱科（Asparagaceae）**下的**蓝星花属（Triteleia）**或**百子莲属（Agapanthus）**等相似，但更贴近**葱科**中一些小型球根花卉。\n\n然而，从专业分类角度，这类花型、6基数花部结构、雄蕊6枚、花被片条纹明显，且常伴肉质叶的植物，最可能属于：\n\n> **石蒜科（Amaryllidaceae）**\n\n特别是**葱属（Allium）**或**蓝星花属（Triteleia）**，但蓝星花属现已被归入**石蒜科**。\n\n进一步确认：图中植物极可能是 **Triteleia laxa**（蓝星花），它属于：",
+          "failure_type": "TOO_VERBOSE"
+        },
+        {
+          "index": 43,
+          "question": "What is the title of this artwork?",
+          "gold": "Madonna and Child (Detail)",
+          "pred": "This image shows a close-up of a marble sculpture featuring two hands—one adult and one child—interacting with draped fabric. The style is characteristic of Renaissance sculpture, particularly the work of Donatello, known for his expressive detail and emotional depth in reliefs.\n\nThe composition, with the adult hand gently covering or guiding the child’s hand over a cloth, is consistent with Donatello’s *Madonna of the Pomegranate* (Madonna del Melograno), a relief panel created around 1445–1450. In this work, the Virgin Mary holds the Christ Child, and their hands are often depicted in intimate contact, sometimes with symbolic objects like a pomegranate.\n\nHowever, another strong candidate is Donatello’s *Madonna of the Steps* (Madonna degli Scalini), a marble relief from around 1425–1427, which also features the Virgin and Child with detailed drapery and tender hand gestures.\n\nUpon closer inspection, the specific arrangement of the hands and the folds of the garment align most closely with Donatello’s *Madonna of the Pomegranate*. The adult hand is positioned as if holding or adjusting the cloth near the child’s",
+          "failure_type": "TOO_VERBOSE"
+        },
+        {
+          "index": 65,
+          "question": "Which scientist first documented the chemical elements in the picture?",
+          "gold": "艾尔伯图斯·麦格努斯（Albertus Magnus）",
+          "pred": "The image shows a piece of arsenic (As) placed on a periodic table, with the element symbol \"As\" and atomic number 33 clearly visible. The question asks which scientist first documented the chemical elements in the picture — specifically, arsenic.\n\nArsenic was known since antiquity, but it was first isolated and documented as a distinct chemical element by Albertus Magnus in the 13th century. However, modern chemical recognition and systematic documentation are often attributed to Robert Boyle in the 17th century, who described it as an element in his work *The Sceptical Chymist* (1661).\n\nBut if we consider the first person to isolate and describe arsenic as a pure element, historical records credit Albertus Magnus (c. 1200–1280), a German scholastic philosopher and alchemist, who wrote about arsenic in his work *De Mineralibus* around 1250.\n\nHowever, some sources attribute the first proper isolation and characterization to Johann Rudolph Glauber in the 17th century, or even earlier to Paracelsus.\n\nBut the most commonly accepted answer for the first scientist to document arsenic as a chemical element is **",
+          "failure_type": "TOO_VERBOSE"
+        }
+      ]
+    },
+    {
+      "name": "loop_breaker",
+      "priority": 4,
+      "count": 4,
+      "applies_to": [
+        "type_concept",
+        "entity_name",
+        "other"
+      ],
+      "instruction": "If reasoning repeats, stop exploring and provide the best supported final answer immediately.",
+      "avoid": "Do not repeat the same hypothesis or search wording.",
+      "examples": [
+        {
+          "index": 17,
+          "question": "What is the title of this artwork?",
+          "gold": "Letizia Ramolino Bonaparte",
+          "pred": "The image shows a famous marble sculpture of a seated woman in classical attire, with a detailed tapestry or painting in the background. This is the iconic statue known as the **Canaletto’s “The Seated Woman”** — wait, no, that’s incorrect.\n\nActually, this is the **“Canaletto”**? No — let me correct myself.\n\nThis is the **“Canaletto”**? No — I’m confusing things.\n\nLet me think carefully: This is the **“Canaletto”**? No — actually, this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I’m stuck in a loop.\n\nLet me reset:\n\nThis is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m making a mistake.\n\nWait — I recognize this now. This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop guessing.\n\nThis is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to look it up.\n\nBut since I can’t use tools right now, I’ll rely on memory: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with something else.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut wait — I recall: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut wait — I recall: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit defeat.\n\nBut then I remembered: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to say I don’t know.\n\nBut then I recalled: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try again: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to admit I don’t know.\n\nBut then I thought: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m confusing it with the **“Canaletto”**? No.\n\nWait — I think this is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I need to stop.\n\nLet me try one more time: This is the **“Canaletto”**? No — this is the **“Canaletto”**? Wait — no.\n\nActually, this is the **“Canaletto”**? I think I’m wrong.\n\nWait — I remember now: This is the **“Canaletto”**?",
+          "failure_type": "LOOPING"
+        },
+        {
+          "index": 43,
+          "question": "What is the title of this artwork?",
+          "gold": "Madonna and Child (Detail)",
+          "pred": "This image shows a close-up of a marble sculpture featuring two hands—one adult and one child—interacting with draped fabric. The style is characteristic of Renaissance sculpture, particularly the work of Michelangelo, known for his expressive hands and dynamic drapery.\n\nThe specific detail of a child’s hand grasping the hem of a garment while an adult hand reaches toward it is a well-known motif from Michelangelo’s *Doni Tondo* (also called *The Holy Family*), a circular painting by Michelangelo Buonarroti. However, this image is not from a painting—it is a photograph of a marble sculpture.\n\nUpon closer inspection, this is actually a detail from Michelangelo’s *Tondo Doni*, but wait—no, the *Tondo Doni* is a painting. This must be a sculpture.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting. Let me reconsider.\n\nThis is a famous detail from Michelangelo’s sculpture *The Doni Tondo*? No, again, that’s a painting.\n\nWait—I recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, I’m confusing it.\n\nLet me think differently. This image is widely recognized as a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nActually, after careful consideration, this is a detail from Michelangelo’s *Doni Tondo*? No, I must be mistaken.\n\nUpon reflection, this is a detail from Michelangelo’s *Doni Tondo*? No, I think I’ve been going in circles.\n\nLet me try a different approach. This image is a well-known detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to accept that I’m stuck.\n\nWait—I remember now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s not right.\n\nAfter rethinking, this is actually a detail from Michelangelo’s *Doni Tondo*? No, I believe I have it: this is from the *Doni Tondo*? No.\n\nI think I’ve made an error. Let me start over.\n\nThis image is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to look it up mentally.\n\nUpon final recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful thought, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been wrong all along.\n\nLet me try: this is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s not right.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct answer is that this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nUpon final and correct recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful consideration, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been mistaken.\n\nLet me try a different angle: this image is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is that this is a detail from Michelangelo’s *Doni Tondo*? No, that’s not right.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to accept that I’m wrong.\n\nUpon final and accurate recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful thought, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been wrong all along.\n\nLet me try: this is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and correct recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful consideration, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been mistaken.\n\nLet me try a different approach: this image is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and accurate recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful thought, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been wrong all along.\n\nLet me try: this is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and correct recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful consideration, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been mistaken.\n\nLet me try a different approach: this image is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and accurate recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful thought, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been wrong all along.\n\nLet me try: this is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and correct recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful consideration, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been mistaken.\n\nLet me try a different approach: this image is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and accurate recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful thought, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been wrong all along.\n\nLet me try: this is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and correct recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful consideration, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been mistaken.\n\nLet me try a different approach: this image is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I need to conclude.\n\nAfter all this, I remember: this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI believe the correct title is *The Doni Tondo*? No, that’s a painting.\n\nUpon final and accurate recollection, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think I have it: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s incorrect.\n\nAfter careful thought, this is a detail from Michelangelo’s *Doni Tondo*? No, I think it’s from the *Doni Tondo*? No.\n\nI recall now: this is a detail from Michelangelo’s *Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I think I’ve been wrong all along.\n\nLet me try: this is a detail from Michelangelo’s *Doni Tondo*? No.\n\nUpon correct identification, this is a detail from Michelangelo’s *Doni Tondo*? No, I believe it’s from the *Doni Tondo*? No.\n\nI think the answer is *The Doni Tondo*? No, that’s a painting.\n\nActually, this is a detail from Michelangelo’s *Doni Tondo*? I",
+          "failure_type": "LOOPING"
+        },
+        {
+          "index": 89,
+          "question": "图中这种字体的设计师是谁？",
+          "gold": "史蒂夫·马特森（Steve Matteson）",
+          "pred": "根据图片中的信息，这种字体是 **Aptos**（旧称 Bierstadt）。\n\nAptos 字体是由 **Steve Matteson** 设计的。他是微软的字体设计师，曾参与设计了微软的 Calibri、Cambria、Consolas、Corbel、Franklin Gothic、Georgia、Lucida Console、Lucida Sans Unicode、Microsoft Sans Serif、Segoe Print、Segoe UI、Segoe UI Emoji、Segoe UI Historic、Segoe UI Symbol、宋体、宋体 New、雅黑、雅黑 New、黑体、黑体 New、楷体、楷体 New、仿宋、仿宋 New、隶书、隶书 New、华文行楷、华文行楷 New、华文宋体、华文宋体 New、华文楷体、华文楷体 New、华文隶书、华文隶书 New、华文细黑、华文细黑 New、华文琥珀、华文琥珀 New、华文雅黑、华文雅黑 New、华文正黑、华文正黑 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷 New、华文正隶、华文正隶 New、华文正宋、华文正宋 New、华文正楷、华文正楷",
+          "failure_type": "LOOPING"
+        },
+        {
+          "index": 91,
+          "question": "The algorithm shown in the image was originally explored by which researcher in his PhD thesis in 1987 who first proposed its key properties?",
+          "gold": "布鲁斯·艾布拉姆森（Bruce Abramson）",
+          "pred": "The image shows a sequence of tree structures with rational numbers (like 7/10, 5/8, 0/3, 2/3, 3/3, 3/4) and branching patterns that resemble the structure of a **ternary tree** or a **splitting tree**, often used in the context of **ternary search trees** or **ternary decision trees**.\n\nHowever, the key clue is the mention of “PhD thesis in 1987” and “first proposed its key properties”.\n\nThis points to **Peter M. D. Gray** — but more accurately, this is likely referring to **G. N. R. (Graham) R. (Robert) Sedgewick**? No.\n\nWait — let’s think about algorithms involving rational numbers and trees explored in a 1987 PhD thesis.\n\nActually, the structure resembles the **ternary tree representation of continued fractions** or **Euclidean algorithm variants**, but more specifically, it looks like the **ternary tree for the Stern-Brocot tree** or **Calkin-Wilf tree**, but those are not typically associated with 1987 PhD theses.\n\nAlternatively, consider **the algorithm for constructing optimal ternary trees** or **ternary search trees**.\n\nBut here’s a better match: The image appears to show **ternary trees with rational node values**, and the progression suggests an algorithm that builds such trees by splitting nodes — possibly related to **ternary search trees** or **ternary decision trees**.\n\nNow, recall that **Peter M. D. Gray** did work on ternary trees, but not in 1987.\n\nWait — **the correct answer is likely “Peter M. D. Gray”**? No.\n\nActually, I remember now: **The algorithm shown is related to the construction of ternary trees for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Not quite.\n\nLet me reconsider: The numbers like 7/10, 5/8, etc., suggest **continued fraction expansions** or **mediant operations**.\n\nIn fact, this looks very much like the **Stern-Brocot tree** or **Calkin-Wilf tree**, but those were known earlier.\n\nBut the question says “originally explored by which researcher in his PhD thesis in 1987”.\n\nAh! I think I got it: **This is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nWait — perhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nActually, after careful thought, I recall that **the algorithm for building ternary trees with rational nodes, as shown, was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not matching.\n\nLet me try a different angle: The image shows a sequence of trees where each step adds a new branch or modifies the tree. This resembles the **algorithm for generating the Stern-Brocot tree**, but again, not 1987.\n\nWait — here’s a breakthrough: **The algorithm is called the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — let’s search my knowledge: In 1987, **Peter M. D. Gray** published work on ternary trees? Not really.\n\nAnother possibility: **The algorithm is related to the “ternary search tree” and was explored by “Peter M. D. Gray” — no.**\n\nI recall now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nWait — perhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nActually, I think I have it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nLet me try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nWait — here’s a better match: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nI think I need to admit that I’m stuck, but let’s try one last thing: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nActually, upon second thought, I recall that **the algorithm for constructing ternary trees with rational nodes, as shown, was explored by “Peter M. D. Gray” — no.**\n\nWait — perhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nWait — let’s think differently: The image shows a sequence of trees with rational numbers, and the progression suggests an algorithm that builds such trees by splitting nodes. This is characteristic of the **Stern-Brocot tree**, but that was known earlier.\n\nHowever, the question specifies “PhD thesis in 1987”, so it must be someone who formalized or explored it in that context.\n\nAfter careful consideration, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nActually, I think I have it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nWait — here’s a new idea: **The algorithm is related to the “ternary search tree” and was explored by “Peter M. D. Gray” — no.**\n\nI think I need to conclude that the answer is **“Peter M. D. Gray”**, but I’m not sure.\n\nWait — let’s try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nActually, I remember now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nWait — let’s try to search my memory: **The algorithm for building ternary trees with rational nodes, as shown, was explored by “Peter M. D. Gray” — no.**\n\nActually, upon reflection, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nI think I have to admit that I’m not sure, but let’s guess: **The answer is “Peter M. D. Gray”**.\n\nBut wait — I just remembered: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — let’s try a different approach: The image shows a sequence of trees with rational numbers, and the progression suggests an algorithm that builds such trees by splitting nodes. This is characteristic of the **Stern-Brocot tree**, but that was known earlier.\n\nHowever, the question specifies “PhD thesis in 1987”, so it must be someone who formalized or explored it in that context.\n\nAfter careful consideration, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nWait — I just found it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I remember now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nI think I have to conclude that the answer is **“Peter M. D. Gray”**, but I’m not sure.\n\nWait — let’s try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nUpon final reflection, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — I just remembered: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nAfter all this, I realize that I might be overcomplicating. Let me think of famous 1987 PhD theses in computer science related to trees and rational numbers.\n\nAh! **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nWait — here’s a new idea: **The algorithm is related to the “ternary search tree” and was explored by “Peter M. D. Gray” — no.**\n\nI think I have to admit that I’m not sure, but let’s guess: **The answer is “Peter M. D. Gray”**.\n\nBut wait — I just found it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I remember now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — let’s try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nUpon final reflection, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nI think I have to conclude that the answer is **“Peter M. D. Gray”**, but I’m not sure.\n\nWait — I just remembered: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nAfter all this, I realize that I might be overcomplicating. Let me think of famous 1987 PhD theses in computer science related to trees and rational numbers.\n\nAh! **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nWait — here’s a new idea: **The algorithm is related to the “ternary search tree” and was explored by “Peter M. D. Gray” — no.**\n\nI think I have to admit that I’m not sure, but let’s guess: **The answer is “Peter M. D. Gray”**.\n\nBut wait — I just found it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I remember now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — let’s try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nUpon final reflection, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nI think I have to conclude that the answer is **“Peter M. D. Gray”**, but I’m not sure.\n\nWait — I just remembered: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nAfter all this, I realize that I might be overcomplicating. Let me think of famous 1987 PhD theses in computer science related to trees and rational numbers.\n\nAh! **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nWait — here’s a new idea: **The algorithm is related to the “ternary search tree” and was explored by “Peter M. D. Gray” — no.**\n\nI think I have to admit that I’m not sure, but let’s guess: **The answer is “Peter M. D. Gray”**.\n\nBut wait — I just found it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I remember now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — let’s try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nUpon final reflection, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nI think I have to conclude that the answer is **“Peter M. D. Gray”**, but I’m not sure.\n\nWait — I just remembered: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nAfter all this, I realize that I might be overcomplicating. Let me think of famous 1987 PhD theses in computer science related to trees and rational numbers.\n\nAh! **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nWait — here’s a new idea: **The algorithm is related to the “ternary search tree” and was explored by “Peter M. D. Gray” — no.**\n\nI think I have to admit that I’m not sure, but let’s guess: **The answer is “Peter M. D. Gray”**.\n\nBut wait — I just found it: **The algorithm is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” — no.**\n\nActually, I remember now: **The algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nPerhaps it’s **“G. N. R. (Graham) R. (Robert) Sedgewick”**? No.\n\nI think the correct answer is **“Peter M. D. Gray”** — but I’m not sure.\n\nWait — let’s try to recall: **In 1987, “Peter M. D. Gray” did not publish on this.**\n\nActually, I think the correct answer is **“Peter M. D. Gray”** — but I’m not confident.\n\nUpon final reflection, I recall that **the algorithm shown is the “ternary tree algorithm” for rational numbers, and it was explored by “Peter M. D. Gray” in his 1987 PhD thesis?** Still not.\n\nI think I have to conclude that the answer is **“Peter M. D. Gray”**, but I’m not sure.\n\nWait — I just remembered: **The algorithm is the “ternary tree algorithm” for rational numbers, and",
+          "failure_type": "LOOPING"
+        }
+      ]
+    },
+    {
+      "name": "tool_protocol_guard",
+      "priority": 2,
+      "count": 2,
+      "applies_to": [
+        "entity_name",
+        "location_landmark"
+      ],
+      "instruction": "When tools are enabled, use registered tool calls only; when tools are disabled, answer from image and knowledge without pseudo code.",
+      "avoid": "Do not print search commands or tool code as natural language.",
+      "examples": [
+        {
+          "index": 10,
+          "question": "Where is this vase sculpture located?",
+          "gold": "Bremen",
+          "pred": "The image shows a detailed stone relief sculpture featuring mythological figures and animals, including a prominent bull, set within a large vase-like structure. This appears to be part of a larger monument or fountain.\n\nTo identify the location, I need to recognize this specific artwork. The style and subject matter suggest it could be from a European public square or garden, possibly in France or Italy.\n\nLet me search for information about this sculpture.\n\n<tool_code>\n!google_search(\"stone relief sculpture bull mythological figures vase monument\")\n</tool_code>",
+          "failure_type": "TOOL_PROTOCOL_ERROR"
+        },
+        {
+          "index": 49,
+          "question": "图中书籍的作者是哪位教授？",
+          "gold": "张善余",
+          "pred": "根据图片显示，这本书的标题是《人口地理学》。\n\n要确定作者，我需要查询这本书的信息。\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport json\n\ndef search_book_author(book_title):\n    url = \"https://www.baidu.com/s\"\n    params = {\n        \"wd\": book_title,\n        \"pn\": 0,\n        \"rn\": 10\n    }\n    headers = {\n        \"User-Agent\": \"Mozilla/5.0\"\n    }\n    response = requests.get(url, params=params, headers=headers)\n    return response.text\n\nbook_title = \"人口地理学\"\nhtml = search_book_author(book_title)\nprint(html[:500])\n</tool_code>\n\n<tool_code>\npython\nimport re\n\ndef extract_author_from_html(html):\n    # 查找包含“人口地理学”的链接\n    pattern = r'人口地理学.*?href=\"([^\"]+)\"'\n    matches = re.findall(pattern, html)\n    if matches:\n        # 获取第一个匹配项的URL\n        url = matches[0]\n        # 解析URL中的书名\n        book_name = url.split('/')[-1].replace('.html', '')\n        print(f\"Book name: {book_name}\")\n        return book_name\n    return None\n\nbook_name = extract_author_from_html(html)\nprint(f\"Extracted book name: {book_name}\")\n</tool_code>\n\n<tool_code>\npython\nimport requests\nimport",
+          "failure_type": "TOOL_PROTOCOL_ERROR"
+        }
+      ]
+    }
+  ]
+}

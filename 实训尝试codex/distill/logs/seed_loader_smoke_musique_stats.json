@@ -1,0 +1,12 @@
+{
+  "total_loaded": 0,
+  "kept": 0,
+  "dropped_vs_tests": 0,
+  "datasets": {
+    "musique": {
+      "kept": 0,
+      "dropped_vs_tests": 0,
+      "error": "Dataset 'dade-ubc/musique' doesn't exist on the Hub or cannot be accessed."
+    }
+  }
+}

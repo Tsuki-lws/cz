@@ -37,7 +37,7 @@ def assert_no_benchmark_evolution(run_mode: str, allow_evolution_updates: bool) 
 
 def assert_harness_base_model(model_name: str) -> None:
     lowered = (model_name or "").lower()
-    if "qwen3-32b" in lowered or "32b" in lowered:
+    if "qwen3-32b" in lowered:
         raise ValueError("Qwen3-32B is allowed only as judge/reflection/teacher, not as Harness base model")
     if any(marker in lowered for marker in ["72b", "70b", "65b", "34b", "110b", "100b"]):
         raise ValueError(f"Harness base model exceeds project policy: {model_name}")

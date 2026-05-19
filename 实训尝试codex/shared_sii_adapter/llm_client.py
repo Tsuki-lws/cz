@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from .types import RuntimeConfig
@@ -25,7 +26,8 @@ class SGLangClient:
             ) from exc
         self.base_url = normalize_openai_base_url(base_url)
         self.model_name = model_name
-        self.client = OpenAI(base_url=self.base_url, api_key=api_key)
+        timeout = float(os.getenv("LLM_HTTP_TIMEOUT", "180"))
+        self.client = OpenAI(base_url=self.base_url, api_key=api_key, timeout=timeout)
 
     def chat(
         self,
@@ -44,8 +46,10 @@ class SGLangClient:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
-        if enable_thinking:
-            payload["extra_body"] = {"enable_thinking": True}
+        payload["extra_body"] = {
+            "enable_thinking": bool(enable_thinking),
+            "chat_template_kwargs": {"enable_thinking": bool(enable_thinking)},
+        }
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = tool_choice

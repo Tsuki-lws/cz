@@ -30,6 +30,7 @@ Each result dict::
 from __future__ import annotations
 
 import base64
+import binascii
 import logging
 import mimetypes
 import os
@@ -91,7 +92,7 @@ except Exception:  # noqa: BLE001
 # Direct mode (only used when SEARCH_PROXY_URL is empty).
 SERPER_API_KEY      = os.getenv("SERPER_API_KEY", "a42e8b4adb370b5c866a2c6feb870641691c5901")
 JINA_API_KEY        = os.getenv("JINA_API_KEY", "jina_27b632dc368a4d878d77a086367a1493HIydGZpZQJhxBWjflZBGmr89R44M")
-IMAGE_UPLOADER      = os.getenv("IMAGE_UPLOADER", "0x0")
+IMAGE_UPLOADER      = os.getenv("IMAGE_UPLOADER", "auto")
 
 SERPER_SEARCH_URL   = "https://google.serper.dev/search"
 SERPER_LENS_URL     = "https://google.serper.dev/lens"
@@ -186,6 +187,40 @@ def _proxy_upload_image(path: Path) -> str:
     return url
 
 
+def _direct_upload_via_0x0(path: Path, mime: str) -> str:
+    with open(path, "rb") as fh:
+        files = {"file": (path.name, fh, mime)}
+        headers = {"User-Agent": "kimi-agent-harness/1.0"}
+        resp = requests.post(
+            "https://0x0.st", files=files, headers=headers, timeout=DEFAULT_TIMEOUT,
+        )
+    resp.raise_for_status()
+    url = resp.text.strip()
+    if not url.startswith("http"):
+        raise RuntimeError(f"Unexpected 0x0.st response: {url!r}")
+    return url
+
+
+def _direct_upload_via_uguu(path: Path, mime: str) -> str:
+    with open(path, "rb") as fh:
+        files = {"files[]": (path.name, fh, mime)}
+        headers = {"User-Agent": "kimi-agent-harness/1.0"}
+        resp = requests.post(
+            "https://uguu.se/upload", files=files, headers=headers, timeout=DEFAULT_TIMEOUT,
+        )
+    resp.raise_for_status()
+    data = resp.json()
+    if not data.get("success"):
+        raise RuntimeError(f"Unexpected uguu response: {data!r}")
+    files_data = data.get("files") or []
+    if not files_data or not isinstance(files_data, list):
+        raise RuntimeError(f"uguu returned no files: {data!r}")
+    url = str((files_data[0] or {}).get("url") or "").replace("\\/", "/")
+    if not url.startswith("http"):
+        raise RuntimeError(f"Unexpected uguu url: {url!r}")
+    return url
+
+
 def _image_text_to_temp_file(image: str) -> Path | None:
     text = image.strip()
     if text.startswith("data:image/") and ";base64," in text:
@@ -197,9 +232,13 @@ def _image_text_to_temp_file(image: str) -> Path | None:
     else:
         return None
     ext = {"jpeg": "jpg", "png": "png", "webp": "webp", "gif": "gif"}.get(ext, ext)
+    normalized_b64 = "".join(ch for ch in b64 if not ch.isspace())
+    padding = (-len(normalized_b64)) % 4
+    if padding:
+        normalized_b64 += "=" * padding
     try:
-        raw = base64.b64decode(b64, validate=False)
-    except Exception as exc:  # noqa: BLE001
+        raw = base64.b64decode(normalized_b64, validate=False)
+    except (binascii.Error, ValueError, UnicodeEncodeError) as exc:
         raise ValueError(f"search_image: invalid base64 image: {exc}") from exc
     if not raw:
         raise ValueError("search_image: empty base64 image")
@@ -253,28 +292,35 @@ def _jina_fetch(url: str, max_chars: int) -> str:
 
 
 def _direct_upload_local_image(path: Path) -> str:
-    if IMAGE_UPLOADER != "0x0":
-        raise RuntimeError(
-            f"Unsupported IMAGE_UPLOADER={IMAGE_UPLOADER!r}. "
-            "Either set IMAGE_UPLOADER=0x0, host the image yourself "
-            "and pass an http(s) URL, or run via SEARCH_PROXY_URL."
-        )
     if not path.exists():
         raise FileNotFoundError(path)
     mime, _ = mimetypes.guess_type(str(path))
     mime = mime or "application/octet-stream"
-    with open(path, "rb") as fh:
-        files = {"file": (path.name, fh, mime)}
-        headers = {"User-Agent": "kimi-agent-harness/1.0"}
-        resp = requests.post(
-            "https://0x0.st", files=files, headers=headers, timeout=DEFAULT_TIMEOUT,
+    uploader = (IMAGE_UPLOADER or "auto").strip().lower()
+    if uploader == "0x0":
+        order = ("0x0",)
+    elif uploader == "uguu":
+        order = ("uguu",)
+    elif uploader == "auto":
+        order = ("uguu", "0x0")
+    else:
+        raise RuntimeError(
+            f"Unsupported IMAGE_UPLOADER={IMAGE_UPLOADER!r}. "
+            "Use one of: auto, 0x0, uguu."
         )
-    resp.raise_for_status()
-    url = resp.text.strip()
-    if not url.startswith("http"):
-        raise RuntimeError(f"Unexpected 0x0.st response: {url!r}")
-    logger.info("Uploaded %s -> %s", path, url)
-    return url
+    errors: list[str] = []
+    for backend in order:
+        try:
+            if backend == "0x0":
+                url = _direct_upload_via_0x0(path, mime)
+            else:
+                url = _direct_upload_via_uguu(path, mime)
+            logger.info("Uploaded %s via %s -> %s", path, backend, url)
+            return url
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{backend}: {type(exc).__name__}: {exc}")
+            logger.warning("upload via %s failed for %s: %s", backend, path, exc)
+    raise RuntimeError("; ".join(errors))
 
 
 def _resolve_image_to_url_direct(image: str) -> str:
@@ -386,10 +432,19 @@ def search_image(
     top_k = max(1, min(int(top_k), 10))
 
     if _proxy_enabled():
-        image_url = _resolve_image_to_url_proxy(image.strip())
+        try:
+            image_url = _resolve_image_to_url_proxy(image.strip())
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("search_image(proxy) failed before search: %s", exc)
+            return [{
+                "rank": 1,
+                "title": "",
+                "url": "",
+                "snippet": f"[search_image-error] {type(exc).__name__}: {exc}",
+            }]
         logger.info("search_image(proxy) image_url=%s top_k=%d fetch=%s",
                     image_url, top_k, fetch)
-        return _proxy_search(
+        results = _proxy_search(
             "/search/image",
             {
                 "image_url": image_url,
@@ -398,9 +453,48 @@ def search_image(
                 "max_chars": int(max_chars),
             },
         )
+        if results:
+            return results
+        if image.startswith("http://") or image.startswith("https://"):
+            logger.info("search_image(proxy) empty results for remote url; retry via downloaded local copy")
+            try:
+                resp = requests.get(image, timeout=DEFAULT_TIMEOUT)
+                resp.raise_for_status()
+                suffix = Path(image.split("?", 1)[0]).suffix or ".jpg"
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+                try:
+                    tmp.write(resp.content)
+                    tmp.close()
+                    uploaded_url = _proxy_upload_image(Path(tmp.name))
+                finally:
+                    try:
+                        Path(tmp.name).unlink()
+                    except OSError:
+                        pass
+                return _proxy_search(
+                    "/search/image",
+                    {
+                        "image_url": uploaded_url,
+                        "top_k": top_k,
+                        "fetch": bool(fetch),
+                        "max_chars": int(max_chars),
+                    },
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("search_image(proxy) remote retry failed: %s", exc)
+        return results
 
     # Direct mode
-    image_url = _resolve_image_to_url_direct(image.strip())
+    try:
+        image_url = _resolve_image_to_url_direct(image.strip())
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("search_image(direct) failed before search: %s", exc)
+        return [{
+            "rank": 1,
+            "title": "",
+            "url": "",
+            "snippet": f"[search_image-error] {type(exc).__name__}: {exc}",
+        }]
     logger.info("search_image(direct) image_url=%s top_k=%d fetch=%s",
                 image_url, top_k, fetch)
     payload = {"url": image_url}

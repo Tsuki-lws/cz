@@ -7,6 +7,6 @@ set -euo pipefail
 
 SEEDS=${SEEDS:-distill/data/raw/seed_pool.jsonl}
 TEACHER=${TEACHER:-distill/configs/teacher_local.yaml}
-STUDENT=${STUDENT:-Qwen/Qwen3.5-9B}
+STUDENT=${STUDENT:-distill/outputs/sft_v1}
 
 python -m distill.train.bopd_online_demo --seed-file $SEEDS --teacher-config $TEACHER --student-model $STUDENT

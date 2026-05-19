@@ -1,0 +1,54 @@
+seed_datasets:
+  - name: hotpotqa
+    source: hf
+    path: hotpot_qa
+    subset: distractor
+    split: train
+    question_field: question
+    answer_field: answer
+    limit: 20
+  - name: musique
+    source: hf
+    path: dade-ubc/musique
+    split: train
+    question_field: question
+    answer_field: answer
+    limit: 20
+  - name: natural_questions
+    source: hf
+    path: natural_questions
+    split: train
+    question_field: question
+    answer_field: answer
+    limit: 20
+  - name: triviaqa
+    source: hf
+    path: mandarjoshi/trivia_qa
+    subset: rc
+    split: train
+    question_field: question
+    answer_field: answer
+    limit: 20
+  - name: a_okvqa
+    source: hf
+    path: HuggingFaceM4/A-OKVQA
+    split: train
+    question_field: question
+    answer_field: direct_answers
+    image_field: image
+    limit: 20
+  - name: infoseek
+    source: hf
+    path: lmms-lab/InfoSeek
+    split: train
+    question_field: question
+    answer_field: answer
+    image_field: image
+    limit: 20
+
+dedup:
+  similarity_threshold: 0.85
+  normalize_lower: true
+  strip_punctuation: true
+
+test_files: []

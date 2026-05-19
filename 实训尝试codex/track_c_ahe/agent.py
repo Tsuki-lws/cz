@@ -4,6 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from shared_sii_adapter.external_assist import organize_memory_with_external_model
 from shared_sii_adapter.react_runner import DEFAULT_SYSTEM_PROMPT, run_react_task
 from shared_sii_adapter.types import AgentRunResult, RuntimeConfig
 
@@ -21,7 +22,7 @@ def load_component_prompt() -> str:
 
 def run_one(task: dict[str, Any], runtime: RuntimeConfig) -> AgentRunResult:
     prompt = load_component_prompt()
-    world_knowledge = load_world_knowledge()
+    world_knowledge = "" if runtime.disable_memory else load_world_knowledge()
     result = run_react_task(
         task,
         replace(runtime, track_name="track_c"),
@@ -36,7 +37,14 @@ def run_one(task: dict[str, Any], runtime: RuntimeConfig) -> AgentRunResult:
         "component_prompt": "track_c_ahe/harness_components/system_prompt.md",
         "suggested_change": "If repeated failures accumulate, update tool_policy or system_prompt on dev data only.",
     }
-    if runtime.allow_evolution_updates and not runtime.benchmark_mode:
+    if runtime.allow_evolution_updates and not runtime.benchmark_mode and not runtime.disable_reflection:
         write_manifest(manifest)
-    result.debug.update({"ahe_manifest": manifest})
+    assist = organize_memory_with_external_model(
+        runtime=runtime,
+        track_name="track_c",
+        task=task,
+        result=result,
+        local_signal=manifest,
+    )
+    result.debug.update({"ahe_manifest": manifest, "external_assist": assist})
     return result

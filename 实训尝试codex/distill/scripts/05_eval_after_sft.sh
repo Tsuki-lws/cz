@@ -6,6 +6,6 @@
 set -euo pipefail
 
 INPUT=${INPUT:-distill/data/eval/simplevqa_2wiki.jsonl}
-CONFIG=${CONFIG:-distill/configs/teacher_local.yaml}
+CONFIG=${CONFIG:-distill/configs/student_qwen35_9b.yaml}
 
 python -m distill.eval.run_eval --input $INPUT --config $CONFIG

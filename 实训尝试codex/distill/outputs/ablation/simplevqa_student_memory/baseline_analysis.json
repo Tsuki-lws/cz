@@ -1,0 +1,65 @@
+{
+  "label": "baseline",
+  "count": 99,
+  "accuracy": 0.2222222222222222,
+  "norm_accuracy": 0.24242424242424243,
+  "loose_accuracy": 0.2727272727272727,
+  "failure_counts": {
+    "DATE_YEAR_ERROR": 9,
+    "IMAGE_MISREAD": 30,
+    "COUNTRY_REGION_ERROR": 8,
+    "CONCEPT_ERROR": 11,
+    "ENTITY_MISIDENTIFIED": 14,
+    "CORRECT": 22,
+    "PARTIAL_MATCH": 3,
+    "FORMAT_ERROR": 2
+  },
+  "task_counts": {
+    "date_year": 13,
+    "location_landmark": 12,
+    "country_region": 10,
+    "type_concept": 14,
+    "entity_name": 15,
+    "other": 34,
+    "visual_attribute": 1
+  },
+  "activated_skill_counts": {
+    "verify_date_year": 9,
+    "image_first_then_verify": 30,
+    "normalize_country_region": 8,
+    "concept_disambiguation": 11,
+    "entity_identification_then_verify": 14,
+    "answer_normalization": 5
+  },
+  "task_failure_counts": {
+    "date_year": {
+      "DATE_YEAR_ERROR": 9,
+      "CORRECT": 4
+    },
+    "location_landmark": {
+      "IMAGE_MISREAD": 11,
+      "FORMAT_ERROR": 1
+    },
+    "country_region": {
+      "COUNTRY_REGION_ERROR": 8,
+      "CORRECT": 2
+    },
+    "type_concept": {
+      "CONCEPT_ERROR": 10,
+      "CORRECT": 4
+    },
+    "entity_name": {
+      "ENTITY_MISIDENTIFIED": 14,
+      "PARTIAL_MATCH": 1
+    },
+    "other": {
+      "CORRECT": 12,
+      "IMAGE_MISREAD": 19,
+      "PARTIAL_MATCH": 2,
+      "FORMAT_ERROR": 1
+    },
+    "visual_attribute": {
+      "CONCEPT_ERROR": 1
+    }
+  }
+}

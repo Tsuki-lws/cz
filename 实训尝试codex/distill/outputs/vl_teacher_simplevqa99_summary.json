@@ -1,0 +1,9 @@
+{
+  "accuracy": 0.18181818181818182,
+  "norm_accuracy": 0.1919191919191919,
+  "loose_accuracy": 0.24242424242424243,
+  "avg_tokens": 829.7777777777778,
+  "avg_turns": 1,
+  "avg_latency": 0.33933429064868825,
+  "avg_tool_calls": 0
+}

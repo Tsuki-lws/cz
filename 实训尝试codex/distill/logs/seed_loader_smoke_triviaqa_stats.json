@@ -1,0 +1,11 @@
+{
+  "total_loaded": 20,
+  "kept": 20,
+  "dropped_vs_tests": 0,
+  "datasets": {
+    "triviaqa": {
+      "kept": 20,
+      "dropped_vs_tests": 0
+    }
+  }
+}

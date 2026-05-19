@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import json
+import base64
 import sys
+import tempfile
 import time
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable
+
+from PIL import Image
 
 from .evidence import compact_tool_result
 
@@ -174,10 +179,52 @@ TOOL_FN_MAP: dict[str, Callable[..., Any]] = {
 
 def _call_search_image(**args: Any) -> Any:
     image = args.pop("image", None) or args.pop("image_url", None)
+    image = _prepare_search_image_upload(image)
     return search_image(image=image, **args)
 
 
 TOOL_FN_MAP["search_image"] = _call_search_image
+
+
+def _prepare_search_image_upload(image: Any) -> Any:
+    if not isinstance(image, str) or image.startswith(("http://", "https://")):
+        return image
+    raw: bytes | None = None
+    text = image.strip()
+    if text.startswith("data:image/") and "," in text:
+        text = text.split(",", 1)[1]
+    path = Path(text).expanduser()
+    if path.exists() and path.is_file():
+        raw = path.read_bytes()
+    else:
+        try:
+            raw = base64.b64decode(text, validate=False)
+        except Exception:  # noqa: BLE001
+            return image
+    try:
+        pil_image = Image.open(BytesIO(raw))
+        pil_image.thumbnail((1280, 1280))
+        if pil_image.mode not in {"RGB", "L"}:
+            pil_image = pil_image.convert("RGB")
+        tmp_dir = PROJECT_ROOT / ".global" / "tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(prefix="search_image_", suffix=".jpg", dir=tmp_dir, delete=False) as handle:
+            pil_image.save(handle, format="JPEG", quality=86, optimize=True)
+            return handle.name
+    except Exception:  # noqa: BLE001
+        return image
+
+TOOL_ALIASES: dict[str, str] = {
+    "web_search": "search_text",
+    "browser_open": "browser_navigate",
+}
+
+FINAL_ANSWER_TOOL_NAMES = {
+    "answer",
+    "answer_query",
+    "confirm_answer",
+    "terminate",
+}
 
 
 def parse_tool_args(raw: str | dict[str, Any] | None) -> dict[str, Any]:
@@ -192,8 +239,63 @@ def parse_tool_args(raw: str | dict[str, Any] | None) -> dict[str, Any]:
         return {}
 
 
+def normalize_tool_name(name: str) -> str:
+    normalized = str(name or "").strip()
+    if not normalized:
+        return ""
+    return TOOL_ALIASES.get(normalized, normalized)
+
+
+def sanitize_tool_args(name: str, args: dict[str, Any]) -> dict[str, Any]:
+    args = dict(args or {})
+    if name == "search_text":
+        query = args.pop("query", None)
+        if query is None:
+            query = args.pop("q", None)
+        if query is not None:
+            args["query"] = query
+        args.pop("image", None)
+        args.pop("image_url", None)
+    elif name == "search_image":
+        image = args.pop("image", None)
+        if image is None:
+            image = args.pop("image_url", None)
+        top_k = args.pop("top_k", None)
+        fetch = args.pop("fetch", None)
+        args.clear()
+        if image is not None:
+            args["image"] = image
+        if top_k is not None:
+            args["top_k"] = top_k
+        if fetch is not None:
+            args["fetch"] = fetch
+    elif name == "browser_navigate":
+        if "max_chars" in args and "max_text" not in args:
+            args["max_text"] = args.pop("max_chars")
+        else:
+            args.pop("max_chars", None)
+        if "wait_timeout" in args and "timeout" not in args:
+            args["timeout"] = args.pop("wait_timeout")
+        else:
+            args.pop("wait_timeout", None)
+        args.pop("fetch", None)
+    elif name == "browser_parallel":
+        if "url" in args and "urls" not in args:
+            value = args.pop("url")
+            args["urls"] = [value] if value else []
+    return args
+
+
 def dispatch_tool(name: str, args: dict[str, Any], *, max_result_chars: int = 10000) -> dict[str, Any]:
     started = time.perf_counter()
+    name = normalize_tool_name(name)
+    if name in FINAL_ANSWER_TOOL_NAMES:
+        return {
+            "ok": False,
+            "content": f"[ERROR] Final answers must be written directly, not via tool: {name}",
+            "latency_ms": 0,
+            "raw": None,
+        }
     if name not in TOOL_FN_MAP:
         return {
             "ok": False,
@@ -202,6 +304,7 @@ def dispatch_tool(name: str, args: dict[str, Any], *, max_result_chars: int = 10
             "raw": None,
         }
     try:
+        args = sanitize_tool_args(name, args)
         raw = TOOL_FN_MAP[name](**args)
         latency_ms = int((time.perf_counter() - started) * 1000)
         return {

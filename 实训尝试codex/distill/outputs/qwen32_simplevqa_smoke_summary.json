@@ -1,0 +1,7 @@
+{
+  "accuracy": 0,
+  "avg_tokens": 1092.060606060606,
+  "avg_turns": 1,
+  "avg_latency": 5.0311919660613205,
+  "avg_tool_calls": 0
+}

@@ -12,6 +12,7 @@ from tqdm import tqdm
 from distill.common import append_jsonl, read_jsonl
 from distill.harness.agent import AgentConfig, ReActAgent
 from distill.harness.llm_client import AsyncLLMClient, load_backend_config
+from distill.harness.teacher_router import TeacherRouter
 from distill.harness.prompts import build_judge_prompt, build_teacher_critique_prompt
 from distill.harness.tools import ToolRegistry
 
@@ -46,10 +47,16 @@ async def rewrite_with_teacher(client: AsyncLLMClient, seed: dict[str, Any], fai
         tools=None,
         max_tokens=800,
     )
+    user_content: Any = seed['question']
+    if seed.get('image_url'):
+        user_content = [
+            {'type': 'text', 'text': seed['question']},
+            {'type': 'image_url', 'image_url': {'url': seed['image_url']}},
+        ]
     rewritten = await client.chat_completion(
         messages=[
             {'role': 'system', 'content': 'Rewrite the full trajectory as a correct assistant solution ending with <answer>...</answer>.'},
-            {'role': 'user', 'content': seed['question']},
+            {'role': 'user', 'content': user_content},
         ],
         tools=None,
         max_tokens=2048,
@@ -57,21 +64,35 @@ async def rewrite_with_teacher(client: AsyncLLMClient, seed: dict[str, Any], fai
     return {'critique': critique['content'], 'teacher_rewrite': rewritten['content']}
 
 
-async def process_seed(seed: dict[str, Any], student_agent: ReActAgent, judge_client: AsyncLLMClient, teacher_client: AsyncLLMClient) -> dict[str, Any]:
+async def process_seed(
+    seed: dict[str, Any],
+    student_agent: ReActAgent,
+    judge_client: AsyncLLMClient,
+    teacher_router: TeacherRouter,
+) -> dict[str, Any]:
     student_result = await student_agent.run(
         question_id=seed['id'],
         question=seed['question'],
         image=seed.get('image') or None,
+        image_path=seed.get('image_path') or None,
+        image_url=seed.get('image_url') or None,
+        image_b64=seed.get('image_b64') or None,
         metadata={'answer': seed.get('answer', '')},
     )
     judge = await judge_prediction(judge_client, seed, student_result.prediction)
     if judge.get('correct', False):
         return {}
-    rewrite = await rewrite_with_teacher(teacher_client, seed, student_result.records)
+    routed_teacher = teacher_router.choose(seed)
+    rewrite = await rewrite_with_teacher(routed_teacher.client, seed, student_result.records)
     return {
         'id': seed['id'],
         'question': seed['question'],
         'answer': seed.get('answer', ''),
+        'teacher': routed_teacher.name,
+        'image': seed.get('image', ''),
+        'image_path': seed.get('image_path', ''),
+        'image_url': seed.get('image_url', ''),
+        'image_b64': seed.get('image_b64', ''),
         'student_failed': {'prediction': student_result.prediction, 'records': student_result.records},
         'judge': judge,
         'teacher_rewritten': rewrite['teacher_rewrite'],
@@ -83,14 +104,25 @@ async def process_seed(seed: dict[str, Any], student_agent: ReActAgent, judge_cl
 async def run_collection(args: argparse.Namespace) -> None:
     seeds = read_jsonl(args.seeds)
     student_client = AsyncLLMClient(load_backend_config(args.student_config))
-    teacher_client = AsyncLLMClient(load_backend_config(args.teacher_config))
+    text_teacher_config = load_backend_config(args.teacher_config)
+    text_teacher_client = AsyncLLMClient(text_teacher_config)
+    vision_teacher_config = load_backend_config(args.vision_teacher_config) if args.vision_teacher_config else None
+    vision_teacher_client = AsyncLLMClient(vision_teacher_config) if vision_teacher_config else None
     judge_client = AsyncLLMClient(load_backend_config(args.judge_config or args.teacher_config))
-    student_agent = ReActAgent(student_client, ToolRegistry.default(), AgentConfig(max_steps=args.max_steps))
+    teacher_router = TeacherRouter(
+        text_teacher_name=args.teacher_name or text_teacher_config.model.replace('/', '_'),
+        text_teacher_client=text_teacher_client,
+        text_teacher_config=text_teacher_config,
+        vision_teacher_name=args.vision_teacher_name or (vision_teacher_config.model.replace('/', '_') if vision_teacher_config else ''),
+        vision_teacher_client=vision_teacher_client,
+        vision_teacher_config=vision_teacher_config,
+    )
+    student_agent = ReActAgent(student_client, ToolRegistry.default(), AgentConfig(max_steps=args.max_steps, allow_multimodal=False))
     semaphore = asyncio.Semaphore(args.concurrency)
 
     async def guarded(seed: dict[str, Any]) -> dict[str, Any]:
         async with semaphore:
-            return await process_seed(seed, student_agent, judge_client, teacher_client)
+            return await process_seed(seed, student_agent, judge_client, teacher_router)
 
     tasks = [asyncio.create_task(guarded(seed)) for seed in seeds]
     for task in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc='on_policy'):
@@ -104,7 +136,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--seeds', required=True)
     parser.add_argument('--student-config', required=True)
     parser.add_argument('--teacher-config', required=True)
+    parser.add_argument('--vision-teacher-config', default='')
     parser.add_argument('--judge-config', default='')
+    parser.add_argument('--teacher-name', default='')
+    parser.add_argument('--vision-teacher-name', default='')
     parser.add_argument('--output', required=True)
     parser.add_argument('--concurrency', type=int, default=8)
     parser.add_argument('--max-steps', type=int, default=8)
