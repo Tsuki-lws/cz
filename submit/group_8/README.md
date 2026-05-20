@@ -79,6 +79,10 @@ python -m shared_sii_adapter.run_dataset \
 
 ## 3. Code Locations
 
+Base Track-D TTL branch:
+
+- `code/实训尝试codex/track_d_ttl/agent.py`: original Track-D test-time-learning implementation used as the base branch for the evolved variants. It is included because `shared_sii_adapter/run_dataset.py` maps `--track track_d` to `track_d_ttl.agent`.
+
 Memory module:
 
 - `code/实训尝试codex/track_d_slot_evo/memory_evo.py`: structured run-level memory with task type, answer slot, constraints, failure type, strategy, tool pattern, policy state, and retrieval scoring.
