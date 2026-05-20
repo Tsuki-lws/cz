@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 from typing import Any
 
 from tqdm import tqdm
@@ -22,8 +23,34 @@ def trajectory_to_text(records: list[dict[str, Any]]) -> str:
     for record in records:
         role = record.get('role', 'unknown')
         content = record.get('content', '')
-        parts.append(f'[{role}] {content}')
+        if isinstance(content, str) and 'data:image' in content:
+            content = '[multimodal user input omitted]'
+        if isinstance(content, str) and len(content) > 2000:
+            content = content[:2000] + ' ... [truncated]'
+        tool_calls = record.get('tool_calls')
+        fn_name = record.get('fn_name')
+        if tool_calls:
+            parts.append(f'[{role} tool_calls] {json.dumps(tool_calls, ensure_ascii=False)[:2000]}')
+        elif role == 'tool' and fn_name:
+            parts.append(f'[{role}:{fn_name}] {content}')
+        else:
+            parts.append(f'[{role}] {content}')
     return ' '.join(parts)
+
+
+def parse_judge_json(content: str) -> dict[str, Any]:
+    stripped = content.strip()
+    if stripped.startswith('```'):
+        stripped = re.sub(r'^```(?:json)?\s*', '', stripped)
+        stripped = re.sub(r'\s*```$', '', stripped)
+    match = re.search(r'\{.*\}', stripped, flags=re.DOTALL)
+    if match:
+        stripped = match.group(0)
+    try:
+        parsed = json.loads(stripped)
+        return {'correct': bool(parsed.get('correct', False)), 'rationale': str(parsed.get('rationale', '')).strip()}
+    except json.JSONDecodeError:
+        return {'correct': False, 'rationale': content}
 
 
 async def judge_prediction(client: AsyncLLMClient, seed: dict[str, Any], prediction: str) -> dict[str, Any]:
@@ -34,10 +61,7 @@ async def judge_prediction(client: AsyncLLMClient, seed: dict[str, Any], predict
         max_tokens=512,
     )
     content = response['content'].strip()
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        return {'correct': False, 'rationale': content}
+    return parse_judge_json(content)
 
 
 async def rewrite_with_teacher(client: AsyncLLMClient, seed: dict[str, Any], failed_records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -55,7 +79,14 @@ async def rewrite_with_teacher(client: AsyncLLMClient, seed: dict[str, Any], fai
         ]
     rewritten = await client.chat_completion(
         messages=[
-            {'role': 'system', 'content': 'Rewrite the full trajectory as a correct assistant solution ending with <answer>...</answer>.'},
+            {
+                'role': 'system',
+                'content': (
+                    'Rewrite the failed answer into a correct final assistant answer. '
+                    f'The gold answer is: {seed.get("answer", "")}. '
+                    'Return only the corrected answer, with no Markdown, explanations, citations, or <answer> tags.'
+                ),
+            },
             {'role': 'user', 'content': user_content},
         ],
         tools=None,
@@ -97,7 +128,7 @@ async def process_seed(
         'judge': judge,
         'teacher_rewritten': rewrite['teacher_rewrite'],
         'teacher_critique': rewrite['critique'],
-        'dpo_pair': {'chosen': rewrite['teacher_rewrite'], 'rejected': trajectory_to_text(student_result.records)},
+        'dpo_pair': {'chosen': rewrite['teacher_rewrite'], 'rejected': student_result.prediction or trajectory_to_text(student_result.records)},
     }
 
 
@@ -117,7 +148,16 @@ async def run_collection(args: argparse.Namespace) -> None:
         vision_teacher_client=vision_teacher_client,
         vision_teacher_config=vision_teacher_config,
     )
-    student_agent = ReActAgent(student_client, ToolRegistry.default(), AgentConfig(max_steps=args.max_steps, allow_multimodal=False))
+    student_agent = ReActAgent(
+        student_client,
+        ToolRegistry.default(),
+        AgentConfig(
+            max_steps=args.max_steps,
+            allow_multimodal=True,
+            disable_tools=args.disable_tools,
+            prompt_mode=args.prompt_mode,
+        ),
+    )
     semaphore = asyncio.Semaphore(args.concurrency)
 
     async def guarded(seed: dict[str, Any]) -> dict[str, Any]:
@@ -143,6 +183,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--output', required=True)
     parser.add_argument('--concurrency', type=int, default=8)
     parser.add_argument('--max-steps', type=int, default=8)
+    parser.add_argument('--disable-tools', action='store_true')
+    parser.add_argument('--prompt-mode', choices=['direct_vqa', 'react'], default='direct_vqa')
     return parser.parse_args()
 
 

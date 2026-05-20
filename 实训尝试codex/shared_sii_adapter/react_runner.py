@@ -9,7 +9,7 @@ from typing import Any
 
 from .llm_client import build_client
 from .compliance import assert_no_gold_payload
-from .tools import TOOLS_SCHEMA, dispatch_tool, normalize_tool_name, parse_tool_args
+from .tools import FINAL_ANSWER_TOOL_NAMES, TOOL_FN_MAP, TOOLS_SCHEMA, dispatch_tool, normalize_tool_name, parse_tool_args
 from .trajectory_schema import make_record, to_messages, write_records
 from .types import AgentRunResult, RuntimeConfig
 
@@ -125,6 +125,9 @@ def extract_answer_from_reasoning(reasoning: str) -> str:
     text = str(reasoning or "").strip()
     if not text:
         return ""
+    answer = extract_structured_answer_from_reasoning(text)
+    if answer:
+        return answer
     patterns = [
         r"最终答案[：:]\s*(?P<answer>[^\n。；;]+)",
         r"答案[：:]\s*(?P<answer>[^\n。；;]+)",
@@ -140,6 +143,13 @@ def extract_answer_from_reasoning(reasoning: str) -> str:
         if 0 < len(answer) <= 160:
             return answer
     return ""
+
+
+def extract_structured_answer_from_reasoning(reasoning: str) -> str:
+    text = str(reasoning or "").strip()
+    if "final_answer" not in text:
+        return ""
+    return extract_final_answer(text)
 
 
 def _coerce_xml_value(value: str) -> Any:
@@ -172,6 +182,23 @@ def extract_xml_tool_calls(content: str, reasoning_content: str = "") -> list[di
             }
         )
     return calls
+
+
+def final_answer_from_tool_call(call: dict[str, Any], content: str = "") -> str:
+    args = parse_tool_args((call.get("function") or {}).get("arguments"))
+    if args.get("first_name") and args.get("last_name"):
+        return f"{args['first_name']} {args['last_name']}".strip()
+    for key in ("final_answer", "answer", "result", "message", "value", "text"):
+        value = args.get(key)
+        if value:
+            return str(value).strip()
+    if args and len(args) == 1:
+        key, value = next(iter(args.items()))
+        if value and str(key).lower() not in {"query", "url", "image"}:
+            return str(value).strip()
+        if key and str(key).lower() not in {"query", "url", "image"}:
+            return str(key).strip()
+    return extract_final_answer(content)
 
 
 def compress_image_b64(image_b64: str, *, max_side: int = 1280, quality: int = 88) -> str:
@@ -274,6 +301,8 @@ def run_react_task(
     total_tokens = 0
     tool_calls_count = 0
     assistant_turns = 0
+    search_text_queries: dict[str, int] = {}
+    tool_name_counts: dict[str, int] = {}
 
     for step in range(1, runtime.max_steps + 1):
         response = client.chat(
@@ -284,8 +313,12 @@ def run_react_task(
             enable_thinking=runtime.enable_thinking,
         )
         content = response["content"] or ""
+        reasoning_answer = extract_structured_answer_from_reasoning(response.get("reasoning_content") or "")
         tool_calls = response["tool_calls"] or []
-        if runtime.enable_xml_tool_fallback and not tool_calls:
+        if not content.strip() and reasoning_answer:
+            content = reasoning_answer
+            tool_calls = []
+        elif runtime.enable_xml_tool_fallback and not tool_calls:
             tool_calls = extract_xml_tool_calls(content, response.get("reasoning_content") or "")
         if not content.strip() and not tool_calls:
             extracted = extract_answer_from_reasoning(response.get("reasoning_content") or "")
@@ -306,12 +339,14 @@ def run_react_task(
             filtered_tool_calls = []
             for call in tool_calls:
                 fn = normalize_tool_name((call.get("function") or {}).get("name", ""))
-                if fn in {"answer", "answer_query", "confirm_answer", "terminate"} and is_direct_answer_text(content):
-                    final_content = content
+                if fn in FINAL_ANSWER_TOOL_NAMES:
+                    final_content = final_answer_from_tool_call(call, content)
                     filtered_tool_calls = []
                     break
                 filtered_tool_calls.append(call)
             tool_calls = filtered_tool_calls
+            if final_content and not tool_calls:
+                records[-1]["tool_calls"] = None
         if not tool_calls and content and not is_raw_tool_call_text(content):
             final_content = content
             final_step_reason = "assistant_finished_without_tool_calls"
@@ -328,10 +363,48 @@ def run_react_task(
 
         for call in tool_calls:
             fn = (call.get("function") or {}).get("name", "")
+            normalized_fn = normalize_tool_name(fn)
             args = parse_tool_args((call.get("function") or {}).get("arguments"))
-            if normalize_tool_name(fn) == "search_image":
+            if normalized_fn in FINAL_ANSWER_TOOL_NAMES:
+                final_content = final_answer_from_tool_call(call, content)
+                final_step_reason = "final_answer_tool_call"
+                break
+            if normalized_fn not in TOOL_FN_MAP:
+                records.append(
+                    make_record(
+                        "tool",
+                        f"[SKIPPED] Unknown tool '{fn}'. Use only the provided tools.",
+                        step_id=step,
+                        tool_call_id=call.get("id"),
+                        fn_name=fn,
+                        fn_args=args,
+                        ok=False,
+                    )
+                )
+                continue
+            if normalized_fn == "search_image":
                 args = resolve_search_image_arg(args, task)
-            result = dispatch_tool(fn, args)
+            if normalized_fn == "search_text":
+                query = " ".join(str(args.get("query") or "").lower().split())
+                search_text_queries[query] = search_text_queries.get(query, 0) + 1
+                tool_name_counts[normalized_fn] = tool_name_counts.get(normalized_fn, 0) + 1
+                if search_text_queries[query] > 3:
+                    result = {
+                        "ok": False,
+                        "content": "[SKIPPED] Duplicate search_text query. Use existing evidence or try a meaningfully different query.",
+                        "latency_ms": 0,
+                    }
+                elif tool_name_counts[normalized_fn] > 24:
+                    result = {
+                        "ok": False,
+                        "content": "[SKIPPED] search_text budget exhausted for this task. Use gathered evidence and answer.",
+                        "latency_ms": 0,
+                    }
+                else:
+                    result = dispatch_tool(fn, args)
+            else:
+                tool_name_counts[normalized_fn] = tool_name_counts.get(normalized_fn, 0) + 1
+                result = dispatch_tool(fn, args)
             tool_calls_count += 1
             records.append(
                 make_record(

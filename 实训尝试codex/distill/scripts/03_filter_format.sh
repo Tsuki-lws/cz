@@ -5,13 +5,23 @@
 
 set -euo pipefail
 
-INPUT=${INPUT:-distill/data/raw/teacher_local/episodes.jsonl}
-FILTERED=${FILTERED:-distill/data/filtered/teacher_local.filtered.jsonl}
+INPUT=${INPUT:-distill/data/raw/teacher_trackg_all/episodes.jsonl}
+FILTERED=${FILTERED:-distill/data/filtered/teacher_trackg_all.filtered.jsonl}
 FINAL=${FINAL:-distill/data/final/distill_sft_v1.json}
 ON_POLICY=${ON_POLICY:-distill/data/raw/on_policy_pairs.jsonl}
 DPO_FINAL=${DPO_FINAL:-distill/data/final/distill_dpo_v1.json}
+FILTER_STATS=${FILTER_STATS:-distill/logs/filter_trackg_all_stats.json}
+MAX_TURNS=${MAX_TURNS:-16}
+MAX_TOKENS=${MAX_TOKENS:-12000}
+MAX_TOOL_ERROR_RATE=${MAX_TOOL_ERROR_RATE:-0.7}
 
-python -m distill.data_collection.filter --input $INPUT --output $FILTERED
+python -m distill.data_collection.filter \
+  --input $INPUT \
+  --output $FILTERED \
+  --stats-output $FILTER_STATS \
+  --max-turns $MAX_TURNS \
+  --max-tokens $MAX_TOKENS \
+  --max-tool-error-rate $MAX_TOOL_ERROR_RATE
 python -m distill.data_collection.format_sft --input $FILTERED --output $FINAL
 if [ -f "$ON_POLICY" ]; then
   python -m distill.data_collection.format_dpo --input $ON_POLICY --output $DPO_FINAL

@@ -122,10 +122,22 @@ class ToolRegistry:
         if name not in self._tools:
             raise KeyError(f'unknown tool: {name}')
         args_raw = function_block.get('arguments', '{}')
-        args = json.loads(args_raw or '{}')
-        result = self._tools[name].fn(**args)
-        if inspect.isawaitable(result):
-            result = await result
+        try:
+            args = json.loads(args_raw or '{}')
+        except json.JSONDecodeError as exc:
+            args = {}
+            result = {'error': f'invalid tool arguments: {exc}', 'raw_arguments': args_raw}
+        else:
+            try:
+                result = self._tools[name].fn(**args)
+                if inspect.isawaitable(result):
+                    result = await result
+            except Exception as exc:  # noqa: BLE001
+                result = {
+                    'error': f'tool execution failed: {type(exc).__name__}: {exc}',
+                    'tool_name': name,
+                    'arguments': args,
+                }
         return {
             'tool_name': name,
             'arguments': args,

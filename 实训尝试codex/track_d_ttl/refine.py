@@ -4,7 +4,7 @@ from __future__ import annotations
 def refine_hint(judge: dict) -> str:
     failure = judge.get("failure_type", "")
     if failure == "no_answer":
-        return "上一轮没有得到答案。请重新规划，必要时先搜索证据；最终只给出简短答案，不要使用 <answer> 标签。"
+        return "上一轮没有得到答案。请重新规划，必要时先搜索证据；最终只给出简短答案。"
     if failure == "tool_call_leak":
         return "上一轮把工具调用文本当成了最终答案。请不要输出 <tool_call>；如需查证就重新调用真实工具，最后只输出简短答案，不要使用 <answer> 标签。"
     if failure == "uncertain_answer":

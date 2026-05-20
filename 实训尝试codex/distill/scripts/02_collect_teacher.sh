@@ -10,4 +10,4 @@ CONFIG=${CONFIG:-distill/configs/teacher_local.yaml}
 VISION_CONFIG=${VISION_CONFIG:-distill/configs/teacher_vl_api.yaml}
 OUT_DIR=${OUT_DIR:-distill/data/raw/teacher_local}
 
-python -m distill.data_collection.teacher_collect --seeds $SEEDS --config $CONFIG --vision-config $VISION_CONFIG --output-dir $OUT_DIR
+python -m track_g_distill_ttl.collect --seeds $SEEDS --config $CONFIG --vision-config $VISION_CONFIG --output-dir $OUT_DIR

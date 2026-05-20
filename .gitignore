@@ -19,6 +19,7 @@ htmlcov/
 .venv/
 venv/
 envs/
+.conda/
 harness-sii/search-proxy/.venv/
 
 # Jupyter
@@ -30,6 +31,8 @@ harness-sii/search-proxy/.venv/
 *.out
 *.err
 nohup.out
+core
+core.*
 
 # Secrets / local env files
 .env
@@ -56,6 +59,7 @@ harness-sii/group_*.csv
 harness-sii/group_*.json
 harness-sii/group_*.zip
 group_*.zip
+group_*.zip*
 
 # Agent case files and trajectories
 harness-sii/cases_submit*/
@@ -73,6 +77,18 @@ experiments*/
 runs/
 reports/
 submissions/
+
+# Distillation / training generated artifacts
+**/distill/data/cache/
+**/distill/data/filtered/
+**/distill/data/final/
+**/distill/data/raw/
+**/distill/logs/
+**/distill/outputs/
+**/experiments/
+
+# Local third-party checkouts
+**/third_party/
 
 # Local archives
 *.tar

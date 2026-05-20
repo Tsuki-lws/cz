@@ -1,0 +1,38 @@
+stage: sft
+do_train: true
+
+model_name_or_path: /inspire/qb-ilm2/project/26summer-camp-01/public/Qwen3.5-9B
+template: qwen3_5
+
+dataset: distill_sft_v1
+dataset_dir: distill/data/final
+val_size: 0.1
+cutoff_len: 4096
+overwrite_cache: true
+preprocessing_num_workers: 16
+
+finetuning_type: full
+freeze_vision_tower: false
+freeze_multi_modal_projector: false
+freeze_language_model: false
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 1
+learning_rate: 1.0e-5
+num_train_epochs: 2.0
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+bf16: true
+flash_attn: sdpa
+gradient_checkpointing: true
+deepspeed: distill/train/ds_zero3.json
+
+logging_steps: 10
+eval_strategy: steps
+eval_steps: 50
+per_device_eval_batch_size: 1
+save_steps: 63
+save_total_limit: 10
+output_dir: distill/outputs/qwen35_9b_trackg_sft_full
+plot_loss: true
+report_to: none

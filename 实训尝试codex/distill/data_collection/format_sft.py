@@ -4,22 +4,67 @@ from __future__ import annotations
 
 import argparse
 import base64
+import json
+import re
 from pathlib import Path
 from typing import Any
 
 from distill.common import read_jsonl, write_json
 
 
+META_PROMPT_MARKERS = (
+    '上一条输出是无效的伪工具调用',
+    '必须忽略它',
+    '只返回 JSON',
+    '```python',
+    '```tool',
+    'search_text(',
+    'search_image(',
+    '[search_text(',
+    '[search_image(',
+    'browser_',
+)
+
+
+def sanitize_content(content: Any) -> str:
+    text = str(content or '').strip()
+    text = re.sub(r"data:image/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+", "[image]", text)
+    text = re.sub(r"'url': '\\[image\\]'", "'url': '[image]'", text)
+    text = re.sub(r'"url": "\\[image\\]"', '"url": "[image]"', text)
+    text = re.sub(r'\bFinal Answer\s*:\s*', 'Final answer: ', text, flags=re.I)
+    return text
+
+
+def is_meta_record(record: dict[str, Any]) -> bool:
+    content = sanitize_content(record.get('content', ''))
+    if record.get('role') == 'system':
+        return True
+    if '<tool_call>' in content:
+        return True
+    content_lower = content.lower()
+    return any(marker.lower() in content_lower for marker in META_PROMPT_MARKERS)
+
+
 def summarize_records(records: list[dict[str, Any]], *, max_items: int = 8) -> str:
     lines: list[str] = []
-    for record in records[:max_items]:
+    for record in records:
+        if is_meta_record(record):
+            continue
         role = str(record.get('role', ''))
-        content = str(record.get('content', '')).strip()
+        content = sanitize_content(record.get('content', ''))
         fn_name = str(record.get('fn_name', '')).strip()
-        if role == 'tool' and fn_name:
+        tool_calls = record.get('tool_calls')
+        if tool_calls:
+            calls = json.dumps(tool_calls, ensure_ascii=False)
+            lines.append(f'[assistant tool_calls] {sanitize_content(calls)[:1000]}')
+        elif role == 'tool' and fn_name:
             lines.append(f'[{role}:{fn_name}] {content[:600]}')
-        else:
+        elif content:
             lines.append(f'[{role}] {content[:600]}')
+        else:
+            continue
+        if len(lines) >= max_items:
+            break
     return '\n'.join(line for line in lines if line)
 
 
@@ -36,7 +81,7 @@ def build_teacher_target(episode: dict[str, Any]) -> str:
     summary = summarize_records(episode.get('records', []))
     prediction = str(episode.get('prediction', '')).strip()
     parts: list[str] = []
-    if summary:
+    if summary and summary != f"[assistant] {prediction}":
         parts.append("Teacher trajectory summary:\n" + summary)
     if prediction:
         parts.append("Final answer:\n" + prediction)

@@ -8,10 +8,10 @@ This package implements the planned pipeline:
 - teacher trajectory collection with resume support
 - dual-teacher routing: text tasks use Qwen3-32B, image-bearing tasks can use Qwen2.5-VL-32B-Instruct
 - iterative offline on-policy collection for BOPD-style data generation
-- LLaMA-Factory SFT and DPO configs for Qwen3.5-9B student
+- LLaMA-Factory SFT and DPO configs for the multimodal Qwen3.5-9B student
 - evaluation scripts aligned with the task metrics
 - failure taxonomy, structured reflection, skill-memory compression, and ablation analysis
-- SGLang/OpenAI-compatible serving for both Qwen3.5-9B student and <=32B teacher/judge models
+- SGLang/OpenAI-compatible serving for both the multimodal Qwen3.5-9B student and <=32B teacher/judge models
 
 ## Quick Start
 
@@ -57,5 +57,5 @@ Do not build skill memory from private test or leaderboard labels. Use only allo
 - Use public seed data only and keep dedup logs.
 - Test-time judge and memory may not use ground truth.
 - Teacher/judge/training models must be no larger than 32B; Qwen3-32B is allowed only as teacher/judge/reflection, not as the Harness base model.
-- The current student is still text-only Qwen3.5-9B. Vision teacher outputs are distilled as text trajectories and answers, not as native student vision capability.
+- The current student is multimodal. Image-bearing samples keep their image paths in the LLaMA-Factory `images` column, so vision-teacher trajectories are distilled together with the corresponding visual input instead of being reduced to text-only supervision.
 - Formal inference should use SGLang-compatible serving.

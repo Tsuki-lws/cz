@@ -21,6 +21,7 @@ TRACK_MODULES = {
     "track_b": "track_b_mia.agent",
     "track_c": "track_c_ahe.agent",
     "track_d": "track_d_ttl.agent",
+    "track_d_evo": "track_d_evo.agent",
     "track_e": "track_e_engineering.agent",
     "track_f": "track_f_wke.agent",
 }
@@ -31,6 +32,14 @@ DEFAULT_QWEN32B_BASE_URL = (
     "user-b260c9e2-91ae-48ff-bfce-dcfd887a0358/"
     "vscode/aace7e69-939d-426f-944d-8d2e148bdb2a/"
     "926b48b6-abf2-4e2b-b2ff-4dea116721c0/proxy/30000"
+)
+
+DEFAULT_QWEN35_9B_BASE_URL = (
+    "https://notebook-inspire.sii.edu.cn/ws-7c23bd1d-9bae-4238-803a-737a35480e18/"
+    "project-39fbffc7-dcca-4fb4-b43a-2f69f72f7e52/"
+    "user-b1acf6ce-25a4-4cb6-b428-f427f4a59686/"
+    "vscode/b2aa27b1-e0f7-425d-b208-acbd7f40ef68/"
+    "68f1224c-8cc9-4e87-8701-523c6e59db1f/proxy/8000/v1"
 )
 
 
@@ -88,7 +97,7 @@ def run_dataset(args: argparse.Namespace) -> None:
     if args.limit:
         rows = rows[: args.limit]
     runtime = RuntimeConfig(
-        llm_base_url=args.llm_base_url or os.getenv("LLM_BASE_URL", "http://127.0.0.1:8000/v1"),
+        llm_base_url=args.llm_base_url or os.getenv("LLM_BASE_URL", DEFAULT_QWEN35_9B_BASE_URL),
         model_name=args.model or os.getenv("MODEL_NAME", "Qwen3.5-9B"),
         judge_base_url=args.judge_base_url or os.getenv("JUDGE_BASE_URL") or DEFAULT_QWEN32B_BASE_URL,
         judge_model_name=args.judge_model or os.getenv("JUDGE_MODEL_NAME", "Qwen3-32B"),
@@ -116,6 +125,10 @@ def run_dataset(args: argparse.Namespace) -> None:
     results: list[AgentRunResult] = []
     out_dir = Path(args.output_dir) / args.track
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.track == "track_d_evo" and runtime.allow_evolution_updates and not args.resume:
+        run_memory = out_dir / "memory" / "evo_memory.jsonl"
+        if run_memory.exists():
+            run_memory.unlink()
     result_path = out_dir / "results.jsonl"
     trajectory_path = out_dir / "trajectories.jsonl"
     existing_results: dict[str, AgentRunResult] = {}
@@ -140,7 +153,7 @@ def run_dataset(args: argparse.Namespace) -> None:
         assert_no_gold_payload(task)
         tasks.append(task)
     effective_concurrency = max(1, args.concurrency)
-    stateful_tracks = {"track_b", "track_c", "track_d", "track_f"}
+    stateful_tracks = {"track_b", "track_c", "track_d", "track_d_evo", "track_f"}
     if args.track in stateful_tracks and runtime.allow_evolution_updates:
         effective_concurrency = 1
     if runtime.benchmark_mode and runtime.allow_evolution_updates:

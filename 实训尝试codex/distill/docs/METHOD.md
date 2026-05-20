@@ -2,13 +2,13 @@
 
 ## Overview
 
-This project implements a black-box distillation framework centered on Qwen3.5-9B student training with OpenAI-style tool trajectories.
+This project implements a black-box distillation framework centered on multimodal Qwen3.5-9B student training with OpenAI-style tool trajectories.
 
 Mainline pipeline:
 
 1. Build a compliant seed pool from public QA datasets.
 2. Collect teacher trajectories with a minimal ReAct harness.
-3. Filter trajectories and convert them to ShareGPT format.
+3. Filter trajectories and convert them to LLaMA-Factory format, preserving image paths for multimodal samples.
 4. Run full-parameter SFT with LLaMA-Factory.
 5. Add an iterative on-policy collection stage for BOPD-style rewrites.
 6. Optionally run DPO and a small online BOPD demo.

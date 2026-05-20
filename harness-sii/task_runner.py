@@ -54,7 +54,7 @@ logger = logging.getLogger("harness.task_runner")
 # ---------------------------------------------------------------------------
 LLM_BASE_URL = os.getenv(
     "LLM_BASE_URL",
-    "https://notebook-inspire.sii.edu.cn/ws-7c23bd1d-9bae-4238-803a-737a35480e18/project-39fbffc7-dcca-4fb4-b43a-2f69f72f7e52/user-b260c9e2-91ae-48ff-bfce-dcfd887a0358/vscode/a41611cb-40b3-4a11-9e03-c916019c5521/2a946687-0b65-48c4-af9a-14410787f628/proxy/8000/v1",
+    "https://notebook-inspire.sii.edu.cn/ws-7c23bd1d-9bae-4238-803a-737a35480e18/project-39fbffc7-dcca-4fb4-b43a-2f69f72f7e52/user-b1acf6ce-25a4-4cb6-b428-f427f4a59686/vscode/b2aa27b1-e0f7-425d-b208-acbd7f40ef68/68f1224c-8cc9-4e87-8701-523c6e59db1f/proxy/8000/v1",
 )
 MODEL_NAME   = os.getenv("MODEL_NAME", "Qwen3.5-9B")
 MAX_STEPS    = int(os.getenv("MAX_STEPS", "20"))

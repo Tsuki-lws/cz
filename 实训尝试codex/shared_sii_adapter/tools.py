@@ -193,10 +193,11 @@ def _prepare_search_image_upload(image: Any) -> Any:
     text = image.strip()
     if text.startswith("data:image/") and "," in text:
         text = text.split(",", 1)[1]
-    path = Path(text).expanduser()
-    if path.exists() and path.is_file():
-        raw = path.read_bytes()
-    else:
+    if len(text) < 4096:
+        path = Path(text).expanduser()
+        if path.exists() and path.is_file():
+            raw = path.read_bytes()
+    if raw is None:
         try:
             raw = base64.b64decode(text, validate=False)
         except Exception:  # noqa: BLE001
@@ -216,13 +217,16 @@ def _prepare_search_image_upload(image: Any) -> Any:
 
 TOOL_ALIASES: dict[str, str] = {
     "web_search": "search_text",
+    "bash": "search_text",
     "browser_open": "browser_navigate",
+    "socketn3l1k_navigate_to_url": "browser_navigate",
 }
 
 FINAL_ANSWER_TOOL_NAMES = {
     "answer",
     "answer_query",
     "confirm_answer",
+    "final_answer",
     "terminate",
 }
 
@@ -252,6 +256,8 @@ def sanitize_tool_args(name: str, args: dict[str, Any]) -> dict[str, Any]:
         query = args.pop("query", None)
         if query is None:
             query = args.pop("q", None)
+        if query is None:
+            query = args.pop("search", None)
         if query is not None:
             args["query"] = query
         args.pop("image", None)
