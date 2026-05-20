@@ -1,0 +1,99 @@
+{"index": "0", "instruction": "图中人物是哪一年因肺结核去世的？", "image": "CCSimpleQA/82.jpg", "pred": "图中人物是利维·维果茨基（Lev Vygotsky），他于1934年因肺结核去世。"}
+{"index": "1", "instruction": "What is the name of this bridge?", "image": "MMEbench/landmark/00fa476690a260a8.jpg", "pred": "Bathampton Toll Bridge"}
+{"index": "2", "instruction": "图中运动起源于哪个国家？", "image": "MMBench_V11/3262.jpg", "pred": "法国"}
+{"index": "3", "instruction": "What country or region is this movie originated from?", "image": "MMEbench/posters/tt0062622.jpg", "pred": "United Kingdom and United States (英国和美国)"}
+{"index": "4", "instruction": "图中的报纸是哪一年正式建立的？", "image": "CCSimpleQA/14.jpg", "pred": "1998年"}
+{"index": "5", "instruction": "What is the name of this fortress?", "image": "MMEbench/landmark/01b715ceb7050bce.jpg", "pred": "Fortress of St. George"}
+{"index": "6", "instruction": "在自然界中，这两个生物之间的关系是什么？", "image": "MMBench_V11/3308.jpg", "pred": "互利共生"}
+{"index": "7", "instruction": "图中这本书的作者死于什么疾病？", "image": "CCSimpleQA/7.jpg", "pred": "霍乱"}
+{"index": "8", "instruction": "这张图片属于哪个类别？", "image": "MMBench_V11/1594.jpg", "pred": "CT scan"}
+{"index": "9", "instruction": "Who appointed the man pictured here as Chief Justice of India in 1977?", "image": "ENSimpleQA/p4.jpg", "pred": "Fakhruddin Ali Ahmed"}
+{"index": "10", "instruction": "Where is this vase sculpture located?", "image": "MMEbench/landmark/0e04b4f7f9801ea9.jpg", "pred": "柏林，德国"}
+{"index": "11", "instruction": "图中的人物是谁？", "image": "CCSimpleQA/15.jpg", "pred": "Ivy Ledbetter Lee"}
+{"index": "12", "instruction": "图中这个概念最初是用来描述哪一种物品的运输系统？", "image": "CCSimpleQA/29.jpg", "pred": "牛奶"}
+{"index": "13", "instruction": "图中的这个桥隧全长多少千米（回答到整数即可）？", "image": "CCSimpleQA/92.jpg", "pred": "55"}
+{"index": "14", "instruction": "图中这个高坝是哪一年完工的？", "image": "CCSimpleQA/94.jpg", "pred": "1970年"}
+{"index": "15", "instruction": "图中的塔2015年获得第56届什么奖项？", "image": "CCSimpleQA/12.jpg", "pred": "图中塔是JP TOWER，2015年获得第56届BCS奖。"}
+{"index": "16", "instruction": "图中这个人在哪一年成为威斯康星州的参议员？", "image": "CCSimpleQA/86.jpg", "pred": "1947"}
+{"index": "17", "instruction": "What is the title of this artwork?", "image": "MMEbench/artwork/6969.jpg", "pred": "The Seated Venus"}
+{"index": "18", "instruction": "The third nebula in the first row from left to right was first discovered by which astronomer?", "image": "ENSimpleQA/p25.png", "pred": "William Herschel"}
+{"index": "19", "instruction": "图中景观位于哪个国家？", "image": "MMBench_V11/3203.jpg", "pred": "美国"}
+{"index": "20", "instruction": "这个人是谁？", "image": "MMBench_V11/1430.jpg", "pred": "Benedict Cumberbatch"}
+{"index": "21", "instruction": "这是哪个地标？", "image": "MMBench_V11/1458.jpg", "pred": "吉萨金字塔群"}
+{"index": "22", "instruction": "From which country or region does this movie originate?", "image": "MMEbench/posters/tt1438176.jpg", "pred": "United States"}
+{"index": "23", "instruction": "图中这个湖是位于哪个市？", "image": "CCSimpleQA/40.jpg", "pred": "赤峰市"}
+{"index": "24", "instruction": "Where is this location?", "image": "MMEbench/landmark/02598153523880aa.jpg", "pred": "Philippines"}
+{"index": "25", "instruction": "In what year were the chemicals shown in the picture first discovered?", "image": "ENSimpleQA/p13.png", "pred": "1957"}
+{"index": "26", "instruction": "Where is the cake located in relation to the camera?", "image": "MMEbench/position/000000211825.jpg", "pred": "The cake is located to the left of the camera."}
+{"index": "27", "instruction": "在自然界中，这两种生物之间的关系是什么？", "image": "MMBench_V11/1951.jpg", "pred": "捕食者与被捕食者"}
+{"index": "28", "instruction": "这是什么工具？", "image": "MMBench_V11/2728.jpg", "pred": "地漏"}
+{"index": "29", "instruction": "The person in the picture worked as a flight attendant until 1971. What's her name?", "image": "ENSimpleQA/p3.jpg", "pred": "Jóhanna Sigurðardóttir"}
+{"index": "30", "instruction": "图中这个植物属于哪一个植物目？", "image": "CCSimpleQA/44.jpg", "pred": "天门冬目（Asparagales）"}
+{"index": "31", "instruction": "图中的植物属的拉丁学名是什么？", "image": "CCSimpleQA/53.jpg", "pred": "Raphidonema"}
+{"index": "32", "instruction": "Which church is depicted in this image?", "image": "MMEbench/landmark/1ac0e3c493073995.jpg", "pred": "St. Barbara (Pitscheid)"}
+{"index": "33", "instruction": "Who is the developer of the science index in the picture?", "image": "ENSimpleQA/p17.png", "pred": "C.W. Palmer"}
+{"index": "34", "instruction": "这张图片属于哪个类别？", "image": "MMBench_V11/1592.jpg", "pred": "医学影像"}
+{"index": "35", "instruction": "What year was the Lego set in the picture released?", "image": "ENSimpleQA/p7.jpg", "pred": "2002"}
+{"index": "36", "instruction": "图中是哪个国家的品牌的产品", "image": "MMBench_V11/412.jpg", "pred": "美国"}
+{"index": "37", "instruction": "图中的运动最早起源于哪个国家？", "image": "MMBench_V11/959.jpg", "pred": "法国"}
+{"index": "38", "instruction": "这个人是谁？", "image": "MMBench_V11/1425.jpg", "pred": "这是大卫·贝克汉姆（David Beckham）。"}
+{"index": "39", "instruction": "Which location is shown in this picture?", "image": "MMEbench/landmark/197e440391d309f8.jpg", "pred": "(skansin-fortress)"}
+{"index": "40", "instruction": "To which family of plants does the plant in the picture belong?", "image": "ENSimpleQA/p20.png", "pred": "蕨类植物"}
+{"index": "41", "instruction": "Which plant family does the plant in the picture belong to?", "image": "ENSimpleQA/p12.jpg", "pred": "香蒲科（Typhaceae）"}
+{"index": "42", "instruction": "The mountain shown in the picture is called by the locals?", "image": "ENSimpleQA/p27.jpg", "pred": "Uluru"}
+{"index": "43", "instruction": "What is the title of this artwork?", "image": "MMEbench/artwork/22760.jpg", "pred": "Madonna and Child"}
+{"index": "44", "instruction": "The galaxy shown in the image belongs to which constellation of spiral galaxies?", "image": "ENSimpleQA/p26.jpg", "pred": "Coma Berenices"}
+{"index": "45", "instruction": "除了太平洋和印度洋，图片中的生物主要生活在哪个大洋中?", "image": "MMBench_V11/386.jpg", "pred": "大西洋"}
+{"index": "46", "instruction": "具有图片中展示的导电性质的物品称为什么？", "image": "MMBench_V11/3391.jpg", "pred": "超导体"}
+{"index": "47", "instruction": "图中动物起源于哪个大洲？", "image": "MMBench_V11/642.jpg", "pred": "非洲"}
+{"index": "48", "instruction": "In what year was the invention of the printing technology for the figure in the picture completed?", "image": "ENSimpleQA/p10.jpg", "pred": "1440"}
+{"index": "49", "instruction": "图中书籍的作者是哪位教授？", "image": "CCSimpleQA/73.jpg", "pred": "K. Bruce Neuberder"}
+{"index": "50", "instruction": "What kind of place is depicted in this image?", "image": "MMEbench/scene/Places365_val_00000077.jpg", "pred": "这是一个购物中心（Shopping Mall）。图片显示了购物中心内的自动扶梯场景，背景可见商店陈列。"}
+{"index": "51", "instruction": "The computer scientist who invented the algorithm shown in the diagram was a professor in the mathematics department of which university?", "image": "ENSimpleQA/p9.png", "pred": "Eindhoven University of Technology"}
+{"index": "52", "instruction": "图中人物是谁？", "image": "CCSimpleQA/81.jpg", "pred": "广田涉"}
+{"index": "53", "instruction": "绿色的蔬菜最初产自哪个国家？", "image": "MMBench_V11/646.jpg", "pred": "意大利"}
+{"index": "54", "instruction": "图中展示的是哪个意大利地区的风景？", "image": "MMBench_V11/371.jpg", "pred": "托斯卡纳（Tuscany）"}
+{"index": "55", "instruction": "图中的条约是哪一年在葡萄牙里斯本签署的？", "image": "CCSimpleQA/24.jpg", "pred": "2007"}
+{"index": "56", "instruction": "What is the name of this church?", "image": "MMEbench/landmark/09ae0628a75e4fcc.jpg", "pred": "Church of the Assumption of Our Lady, Zottegem"}
+{"index": "57", "instruction": "What type of place is described in this image?", "image": "MMEbench/scene/Places365_val_00000195.jpg", "pred": "mountain"}
+{"index": "58", "instruction": "Which modern personal computer was the recipient of the Turing Award for designing and implementing?", "image": "ENSimpleQA/p34.png", "pred": "IBM 704"}
+{"index": "59", "instruction": "图中这个公司在美国首次发行绿色债券的年份是哪一年？", "image": "CCSimpleQA/28.jpg", "pred": "2016"}
+{"index": "60", "instruction": "According to the criteria of the Japan Meteorological Agency, what level above does the special alert need to be issued for the natural disaster shown in the figure?", "image": "ENSimpleQA/p18.jpg", "pred": "level 5"}
+{"index": "61", "instruction": "By which electrical engineer was the rule shown in the picture invented?", "image": "ENSimpleQA/p15.jpg", "pred": "Fleming"}
+{"index": "62", "instruction": "The variable corresponding to the formula in the figure is named after which scientist?", "image": "ENSimpleQA/p14.png", "pred": "Carlo Marangoni"}
+{"index": "63", "instruction": "Which Chinese dynasty was the author of this book?", "image": "ENSimpleQA/p30.png", "pred": "Spring and Autumn Period"}
+{"index": "64", "instruction": "图中这是一种什么建筑风格？", "image": "CCSimpleQA/88.jpg", "pred": "巴洛克风格"}
+{"index": "65", "instruction": "Which scientist first documented the chemical elements in the picture?", "image": "ENSimpleQA/p11.jpg", "pred": "Dmitri Mendeleev"}
+{"index": "66", "instruction": "图中这本短歌集共收录多少首短歌？", "image": "CCSimpleQA/85.jpg", "pred": "这本短歌集收录了531首短歌。"}
+{"index": "67", "instruction": "将一块钠放入图片所示液体中会产生什么气体？", "image": "MMBench_V11/3090.jpg", "pred": "氢气"}
+{"index": "68", "instruction": "In what year was the illustrated mathematical theorem first stated and proved?", "image": "ENSimpleQA/p22.png", "pred": "1877"}
+{"index": "69", "instruction": "Which philosophical work created by the figure in the picture was first published in April 1755 in Amsterdam, Netherlands? Please answer using the Chinese name.", "image": "ENSimpleQA/p33.png", "pred": "《论人类不平等的起源和基础》"}
+{"index": "70", "instruction": "这张海报与哪个特殊的日子相关联？", "image": "MMBench_V11/1753.jpg", "pred": "National Reading Day"}
+{"index": "71", "instruction": "What famous algorithm did the computer scientists in the picture co-invent?", "image": "ENSimpleQA/p24.jpg", "pred": "RSA"}
+{"index": "72", "instruction": "2018年美军首次将什么型号的战机搭载于图中的两栖攻击舰上？", "image": "CCSimpleQA/77.jpg", "pred": "F-35B"}
+{"index": "73", "instruction": "What is this an image of?", "image": "MMEbench/landmark/14d3aba340d2fba9.jpg", "pred": "Rue des Cascades, a street in the 20th arrondissement of Paris, France."}
+{"index": "74", "instruction": "Which philosopher wrote this book?", "image": "ENSimpleQA/p31.png", "pred": "Immanuel Kant（康德）"}
+{"index": "75", "instruction": "What type of location is shown in the photo?", "image": "MMEbench/scene/Places365_val_00000074.jpg", "pred": "necropolis"}
+{"index": "76", "instruction": "Where is this picture captured?", "image": "MMEbench/scene/Places365_val_00000152.jpg", "pred": "Santa Maria Museum of Flight"}
+{"index": "77", "instruction": "图中人物获得诺贝尔文学奖的年份是哪一年？", "image": "CCSimpleQA/79.jpg", "pred": "1927年"}
+{"index": "78", "instruction": "这张图片中的人是谁？", "image": "MMBench_V11/734.jpg", "pred": "这张图片中的人是吴京。"}
+{"index": "79", "instruction": "图中这种现象是由什么自然现象产生？", "image": "CCSimpleQA/46.jpg", "pred": "日晕"}
+{"index": "80", "instruction": "What is the title of this movie?", "image": "MMEbench/posters/tt0112740.jpg", "pred": "Crimson Tide"}
+{"index": "81", "instruction": "What type does this artwork belong to?", "image": "MMEbench/artwork/11488.jpg", "pred": "fresco"}
+{"index": "82", "instruction": "What is the world-renowned title of the scientist in the picture for his contribution to the field of nuclear physics?", "image": "ENSimpleQA/p16.jpg", "pred": "Nobel Prize in Physics"}
+{"index": "83", "instruction": "图中是哪一个县的地图？", "image": "CCSimpleQA/2.jpg", "pred": "图中地图是仙游县的地图。"}
+{"index": "84", "instruction": "这个产品的品牌是哪一年成立的？", "image": "MMBench_V11/3530.jpg", "pred": "2010"}
+{"index": "85", "instruction": "In what year was the work pictured first published?", "image": "ENSimpleQA/p32.png", "pred": "首次出版于1751年"}
+{"index": "86", "instruction": "图中这个明星在2018年发行了哪张音乐专辑？", "image": "CCSimpleQA/65.jpg", "pred": "Antares"}
+{"index": "87", "instruction": "截至2021年5月，图中这个公约有多少个签署国？", "image": "CCSimpleQA/78.jpg", "pred": "61"}
+{"index": "88", "instruction": "图中这个昆虫属于哪个目？", "image": "CCSimpleQA/32.jpg", "pred": "鳞翅目"}
+{"index": "89", "instruction": "图中这种字体的设计师是谁？", "image": "CCSimpleQA/91.jpg", "pred": "Steve Matteson"}
+{"index": "90", "instruction": "图中所示穴位所属的经脉是什么？", "image": "CCSimpleQA/0.jpg", "pred": "足阳明胃经"}
+{"index": "91", "instruction": "The algorithm shown in the image was originally explored by which researcher in his PhD thesis in 1987 who first proposed its key properties?", "image": "ENSimpleQA/p8.png", "pred": "Bruce Abramson"}
+{"index": "92", "instruction": "What country or region is this movie from?", "image": "MMEbench/posters/tt0450259.jpg", "pred": "United Kingdom"}
+{"index": "93", "instruction": "图中这个公司总部设在哪个国家？", "image": "CCSimpleQA/63.jpg", "pred": "卢森堡（Luxembourg）"}
+{"index": "94", "instruction": "What type of geological feature is this photo taken in?", "image": "MMEbench/scene/Places365_val_00000114.jpg", "pred": "red rock formation"}
+{"index": "95", "instruction": "What is the landmark shown in this image?", "image": "MMEbench/landmark/06d039ff97afef04.jpg", "pred": "The Arch of Galerius (also known as the Kamara) in Thessaloniki, Greece."}
+{"index": "96", "instruction": "在自然界中，这两个生物之间的关系是什么？", "image": "MMBench_V11/3298.jpg", "pred": "decomposer"}
+{"index": "97", "instruction": "图中这本书的作者是哪位德国哲学家？", "image": "CCSimpleQA/80.jpg", "pred": "格奥尔格·威廉·弗里德里希·黑格尔"}
+{"index": "98", "instruction": "Where is this artwork displayed?", "image": "MMEbench/artwork/38740.jpg", "pred": "the Rear》（1893 年"}

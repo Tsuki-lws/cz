@@ -1,0 +1,13 @@
+{
+  "count": 100,
+  "accuracy": 0.53,
+  "avg_tokens": 23821.22,
+  "avg_turns": 4.6,
+  "avg_tool_calls": 3.79,
+  "avg_latency": 34.96195414412301,
+  "llm_judge_count": 100,
+  "llm_judge_error_count": 0,
+  "llm_accuracy": 0.79,
+  "llm_avg_confidence": 0.8493999999999999,
+  "llm_judge_model": "/inspire/qb-ilm2/project/26summer-camp-01/26210300/Qwen3-32B"
+}

@@ -1,0 +1,13 @@
+{
+  "count": 99,
+  "accuracy": 0.30303030303030304,
+  "avg_tokens": 18461.959595959597,
+  "avg_turns": 4.404040404040404,
+  "avg_tool_calls": 3.01010101010101,
+  "avg_latency": 48.6028720638115,
+  "llm_judge_count": 99,
+  "llm_judge_error_count": 0,
+  "llm_accuracy": 0.6666666666666666,
+  "llm_avg_confidence": 0.7217171717171718,
+  "llm_judge_model": "Qwen3-32B"
+}
