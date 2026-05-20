@@ -77,7 +77,7 @@ experiments*/
 runs/
 reports/
 submissions/
-
+# submit
 # Distillation / training generated artifacts
 **/distill/data/cache/
 **/distill/data/filtered/
