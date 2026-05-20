@@ -4,7 +4,7 @@ do_train: true
 model_name_or_path: /inspire/qb-ilm2/project/26summer-camp-01/public/Qwen3.5-9B
 template: qwen3_5
 
-dataset: distill_sft_v1
+dataset: distill_sft_trackd_tools_500_clean
 dataset_dir: distill/data/final
 val_size: 0.1
 cutoff_len: 4096
@@ -31,8 +31,8 @@ logging_steps: 10
 eval_strategy: steps
 eval_steps: 50
 per_device_eval_batch_size: 1
-save_steps: 63
+save_steps: 30
 save_total_limit: 10
-output_dir: distill/outputs/qwen35_9b_trackg_sft_full
+output_dir: distill/outputs/qwen35_9b_trackd_tools_sft_500_clean
 plot_loss: true
 report_to: none

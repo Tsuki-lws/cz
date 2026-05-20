@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from shared_sii_adapter.react_runner import find_similar_search_query
+
 from .skills import classify_task, extract_constraints
 
 
@@ -27,7 +29,7 @@ class EvoMemory:
                 rows.append(row)
         return rows
 
-    def retrieve(self, task: dict[str, Any], k: int = 3) -> tuple[str, list[dict[str, Any]]]:
+    def retrieve(self, task: dict[str, Any], k: int = 2) -> tuple[str, list[dict[str, Any]]]:
         task_type = classify_task(task)
         constraints = set(extract_constraints(task))
         rows = self._rows()
@@ -49,17 +51,17 @@ class EvoMemory:
             if score > 0:
                 scored.append((score, idx, row))
         hits = [row for _, _, row in sorted(scored, key=lambda item: (-item[0], -item[1]))[:k]]
-        lines = [
-            "Run-level memory summary:",
-            f"- Similar prior cases in this run: {len(hits)}. Use only the reusable strategy, never copy an old answer.",
-        ]
+        lines = [f"Run memory: {len(hits)} similar cases. Reuse only planning strategy, not answers."]
         strategy_counts: dict[str, int] = {}
         for row in hits:
             strategy = str(row.get("strategy") or "").strip()
             if strategy:
                 strategy_counts[strategy] = strategy_counts.get(strategy, 0) + 1
-        for strategy, count in sorted(strategy_counts.items(), key=lambda item: (-item[1], item[0]))[:2]:
+        for strategy, count in sorted(strategy_counts.items(), key=lambda item: (-item[1], item[0]))[:1]:
             lines.append(f"- x{count}: {strategy}")
+        duplicate_risks = sum(int(row.get("duplicate_query_count") or 0) for row in hits)
+        if duplicate_risks:
+            lines.append("- Avoid near-duplicate searches. If a query repeats the same entity+slot, answer or query a different missing slot.")
         return "\n".join(lines), hits
 
     def update(self, item: dict[str, Any]) -> None:
@@ -89,6 +91,18 @@ class EvoMemory:
         task_type = classify_task(task)
         failure = str(signal.get("failure_type") or "")
         tool_names = [str(row.get("fn_name")) for row in result.trajectory if row.get("role") == "tool" and row.get("fn_name")]
+        search_queries = [
+            str((row.get("fn_args") or {}).get("query") or "")
+            for row in result.trajectory
+            if row.get("role") == "tool" and row.get("fn_name") == "search_text"
+        ]
+        seen_queries: list[str] = []
+        duplicate_query_count = 0
+        for query in search_queries:
+            if find_similar_search_query(query, seen_queries):
+                duplicate_query_count += 1
+            else:
+                seen_queries.append(query)
         image_tools = sum(1 for name in tool_names if name == "search_image")
         text_tools = sum(1 for name in tool_names if name == "search_text")
         browser_tools = sum(1 for name in tool_names if name.startswith("browser"))
@@ -109,6 +123,8 @@ class EvoMemory:
             strategy = "If image search fails, extract visible text/entity clues and run one focused search_text query instead of guessing."
         elif failure == "temporal_drift":
             strategy = "Preserve temporal constraints in queries and final reasoning: first, before, after, as-of, season, and explicit years."
+        if duplicate_query_count:
+            strategy = "Avoid near-duplicate searches: after one entity+slot query, either answer from evidence or query a different missing slot."
         return {
             "index": result.index,
             "task_type": task_type,
@@ -122,6 +138,7 @@ class EvoMemory:
                 "search_text": text_tools,
                 "browser": browser_tools,
             },
+            "duplicate_query_count": duplicate_query_count,
             "pred_preview": str(result.pred or "")[:120],
             "metrics": {
                 "tokens": result.metrics.get("tokens", 0),

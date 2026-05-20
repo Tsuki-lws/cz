@@ -218,8 +218,12 @@ def _prepare_search_image_upload(image: Any) -> Any:
 TOOL_ALIASES: dict[str, str] = {
     "web_search": "search_text",
     "bash": "search_text",
+    "search_wikipedia": "search_text",
+    "browser_search_text": "search_text",
     "browser_open": "browser_navigate",
+    "webbrowser_navigate": "browser_navigate",
     "socketn3l1k_navigate_to_url": "browser_navigate",
+    "fetch_text": "browser_navigate",
 }
 
 FINAL_ANSWER_TOOL_NAMES = {
@@ -276,6 +280,8 @@ def sanitize_tool_args(name: str, args: dict[str, Any]) -> dict[str, Any]:
         if fetch is not None:
             args["fetch"] = fetch
     elif name == "browser_navigate":
+        if "query" in args and "url" not in args:
+            args["url"] = args.pop("query")
         if "max_chars" in args and "max_text" not in args:
             args["max_text"] = args.pop("max_chars")
         else:

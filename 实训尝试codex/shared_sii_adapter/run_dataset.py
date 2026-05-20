@@ -6,6 +6,7 @@ import importlib
 import json
 import os
 from pathlib import Path
+import traceback
 
 from .eval_metrics import summarize
 from .io_utils import read_table, write_json, write_jsonl
@@ -22,6 +23,7 @@ TRACK_MODULES = {
     "track_c": "track_c_ahe.agent",
     "track_d": "track_d_ttl.agent",
     "track_d_evo": "track_d_evo.agent",
+    "track_d_slot_evo": "track_d_slot_evo.agent",
     "track_e": "track_e_engineering.agent",
     "track_f": "track_f_wke.agent",
 }
@@ -80,6 +82,8 @@ def resolve_local_image(task: dict, dataset_path: Path) -> dict:
         image_path,
         dataset_path.parent / image_path,
         dataset_path.parent.parent / image_path,
+        dataset_path.parent / "simpleVQA" / image_path,
+        dataset_path.parent.parent / "simpleVQA" / image_path,
         project_root / "datasets" / image_path,
         project_root / "datasets" / "simpleVQA" / image_path,
     ]
@@ -103,6 +107,8 @@ def run_dataset(args: argparse.Namespace) -> None:
         judge_model_name=args.judge_model or os.getenv("JUDGE_MODEL_NAME", "Qwen3-32B"),
         max_steps=args.max_steps,
         max_tokens=args.max_tokens,
+        temperature=args.temperature,
+        enable_thinking=not args.disable_thinking,
         disable_tools=args.disable_tools,
         disable_reflection=args.disable_reflection,
         disable_memory=args.disable_memory,
@@ -125,7 +131,7 @@ def run_dataset(args: argparse.Namespace) -> None:
     results: list[AgentRunResult] = []
     out_dir = Path(args.output_dir) / args.track
     out_dir.mkdir(parents=True, exist_ok=True)
-    if args.track == "track_d_evo" and runtime.allow_evolution_updates and not args.resume:
+    if args.track in {"track_d_evo", "track_d_slot_evo"} and runtime.allow_evolution_updates and not args.resume:
         run_memory = out_dir / "memory" / "evo_memory.jsonl"
         if run_memory.exists():
             run_memory.unlink()
@@ -133,17 +139,34 @@ def run_dataset(args: argparse.Namespace) -> None:
     trajectory_path = out_dir / "trajectories.jsonl"
     existing_results: dict[str, AgentRunResult] = {}
     if args.resume and result_path.exists():
-        for line in result_path.read_text(encoding="utf-8").splitlines():
-            if not line.strip():
-                continue
-            row = json.loads(line)
-            result = AgentRunResult(
-                index=str(row.get("index", "")),
-                instruction=str(row.get("instruction", "")),
-                image=str(row.get("image", "")),
-                pred=str(row.get("pred", "")),
-            )
-            existing_results[result.index] = result
+        if trajectory_path.exists():
+            for line in trajectory_path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                result = AgentRunResult(
+                    index=str(row.get("index", "")),
+                    instruction=str(row.get("instruction", "")),
+                    image=str(row.get("image", "")),
+                    image_url=str(row.get("image_url", "")),
+                    pred=str(row.get("pred", "")),
+                    trajectory=row.get("trajectory") or [],
+                    metrics=row.get("metrics") or {},
+                    debug=row.get("debug") or {},
+                )
+                existing_results[result.index] = result
+        else:
+            for line in result_path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                result = AgentRunResult(
+                    index=str(row.get("index", "")),
+                    instruction=str(row.get("instruction", "")),
+                    image=str(row.get("image", "")),
+                    pred=str(row.get("pred", "")),
+                )
+                existing_results[result.index] = result
     tasks = []
     for idx, row in enumerate(rows):
         task = strip_gold_fields(normalize_task(row, idx))
@@ -153,7 +176,7 @@ def run_dataset(args: argparse.Namespace) -> None:
         assert_no_gold_payload(task)
         tasks.append(task)
     effective_concurrency = max(1, args.concurrency)
-    stateful_tracks = {"track_b", "track_c", "track_d", "track_d_evo", "track_f"}
+    stateful_tracks = {"track_b", "track_c", "track_d", "track_d_evo", "track_d_slot_evo", "track_f"}
     if args.track in stateful_tracks and runtime.allow_evolution_updates:
         effective_concurrency = 1
     if runtime.benchmark_mode and runtime.allow_evolution_updates:
@@ -176,11 +199,32 @@ def run_dataset(args: argparse.Namespace) -> None:
             ],
         )
 
+    def error_result(task: dict, exc: BaseException) -> AgentRunResult:
+        idx = str(task.get("index") or task.get("id") or "")
+        return AgentRunResult(
+            index=idx,
+            instruction=str(task.get("instruction") or task.get("question") or task.get("query") or ""),
+            image=str(task.get("image") or ""),
+            image_url=str(task.get("image_url") or ""),
+            pred="",
+            trajectory=[],
+            metrics={"tokens": 0, "turns": 0, "tool_calls": 0, "latency": 0, "trajectory_path": ""},
+            debug={
+                "track": args.track,
+                "error": type(exc).__name__,
+                "error_message": str(exc),
+                "traceback": traceback.format_exc()[-4000:],
+            },
+        )
+
     results = list(existing_results.values())
     if tasks:
         if effective_concurrency == 1:
             for task in tasks:
-                results.append(run_one(task, runtime))
+                try:
+                    results.append(run_one(task, runtime))
+                except Exception as exc:  # noqa: BLE001
+                    results.append(error_result(task, exc))
                 write_progress(results)
         else:
             ordered: list[AgentRunResult | None] = [None] * len(tasks)
@@ -188,7 +232,10 @@ def run_dataset(args: argparse.Namespace) -> None:
                 future_to_idx = {pool.submit(run_one, task, runtime): idx for idx, task in enumerate(tasks)}
                 for future in as_completed(future_to_idx):
                     idx = future_to_idx[future]
-                    ordered[idx] = future.result()
+                    try:
+                        ordered[idx] = future.result()
+                    except Exception as exc:  # noqa: BLE001
+                        ordered[idx] = error_result(tasks[idx], exc)
                     completed = list(existing_results.values()) + [r for r in ordered if r is not None]
                     write_progress(completed)
             results.extend(r for r in ordered if r is not None)
@@ -225,6 +272,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--external-assist-max-tokens", type=int, default=512)
     parser.add_argument("--max-steps", type=int, default=20)
     parser.add_argument("--max-tokens", type=int, default=16000)
+    parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature for the main agent calls.")
+    parser.add_argument("--disable-thinking", action="store_true")
     parser.add_argument("--disable-tools", action="store_true")
     parser.add_argument("--disable-reflection", action="store_true")
     parser.add_argument("--disable-memory", action="store_true")

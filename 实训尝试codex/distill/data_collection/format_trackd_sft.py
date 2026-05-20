@@ -15,11 +15,15 @@ _XML_FINAL_ANSWER_RE = re.compile(
     re.S,
 )
 _XML_PARAM_RE = re.compile(r"<parameter=(?:answer|final_answer)>\s*(?P<answer>.*?)\s*</parameter>", re.S)
+_XML_TOOL_CALL_BLOCK_RE = re.compile(r"<tool_call>.*?</tool_call>", re.S)
+_XML_FUNCTION_BLOCK_RE = re.compile(r"<function=[\w_]+>.*?</function>", re.S)
 
 
 def sanitize_text(value: Any, *, max_chars: int = 4000) -> str:
     text = str(value or "").strip()
     text = re.sub(r"data:image/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+", "[image]", text)
+    text = _XML_TOOL_CALL_BLOCK_RE.sub("[tool call emitted via XML fallback; parsed separately]", text)
+    text = _XML_FUNCTION_BLOCK_RE.sub("[tool call emitted via XML fallback; parsed separately]", text)
     text = re.sub(r"\s+", " ", text)
     if len(text) > max_chars:
         return text[:max_chars] + " ... [truncated]"

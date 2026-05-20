@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any
 
 from .types import RuntimeConfig
@@ -55,7 +56,20 @@ class SGLangClient:
             payload["tool_choice"] = tool_choice
         if response_format:
             payload["response_format"] = response_format
-        response = self.client.chat.completions.create(**payload)
+        last_exc: Exception | None = None
+        for attempt in range(4):
+            try:
+                response = self.client.chat.completions.create(**payload)
+                break
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                text = str(exc).lower()
+                retryable = any(marker in text for marker in ["404 not found", "502", "503", "504", "timeout", "temporarily", "connection"])
+                if not retryable or attempt == 3:
+                    raise
+                time.sleep(2.0 * (attempt + 1))
+        else:
+            raise last_exc or RuntimeError("chat completion failed")
         choice = response.choices[0]
         msg = choice.message
         tool_calls = getattr(msg, "tool_calls", None) or []

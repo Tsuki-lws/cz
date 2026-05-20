@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import re
 import time
@@ -38,6 +39,56 @@ _XML_TOOL_CALL_RE = re.compile(
 )
 _XML_PARAM_RE = re.compile(r"<parameter=(?P<key>[\w_]+)>\s*(?P<value>.*?)\s*</parameter>", re.S)
 _PARTIAL_FINAL_ANSWER_RE = re.compile(r'"final_answer"\s*:\s*"(?P<answer>[^"\n{}]{1,160})', re.S)
+_MALFORMED_FINAL_ANSWER_RE = re.compile(r'^\{\s*"final_answer"\s*:\s*"?\s*"?\s*\}?$', re.S)
+
+_QUERY_STOPWORDS = {
+    "a",
+    "an",
+    "the",
+    "of",
+    "in",
+    "on",
+    "for",
+    "to",
+    "by",
+    "with",
+    "and",
+    "or",
+    "movie",
+    "film",
+    "image",
+    "picture",
+}
+
+
+def normalize_search_query(query: str) -> str:
+    text = str(query or "").lower()
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"[^\w\u4e00-\u9fff]+", " ", text)
+    tokens = [token for token in text.split() if token and token not in _QUERY_STOPWORDS]
+    return " ".join(tokens)
+
+
+def search_query_similarity(left: str, right: str) -> float:
+    left_tokens = set(normalize_search_query(left).split())
+    right_tokens = set(normalize_search_query(right).split())
+    if not left_tokens or not right_tokens:
+        return 0.0
+    jaccard = len(left_tokens & right_tokens) / max(1, len(left_tokens | right_tokens))
+    containment = len(left_tokens & right_tokens) / max(1, min(len(left_tokens), len(right_tokens)))
+    return max(jaccard, 0.85 * containment)
+
+
+def find_similar_search_query(query: str, previous_queries: list[str], *, threshold: float = 0.78) -> str:
+    normalized = normalize_search_query(query)
+    if not normalized:
+        return ""
+    for previous in previous_queries:
+        if normalized == normalize_search_query(previous):
+            return previous
+        if search_query_similarity(query, previous) >= threshold:
+            return previous
+    return ""
 
 
 def extract_final_answer(content: str) -> str:
@@ -54,6 +105,8 @@ def extract_final_answer(content: str) -> str:
                     return str(answer).strip()
         except json.JSONDecodeError:
             pass
+    if _MALFORMED_FINAL_ANSWER_RE.match(stripped):
+        return ""
     partial = _PARTIAL_FINAL_ANSWER_RE.search(stripped)
     if partial:
         return partial.group("answer").strip()
@@ -85,7 +138,8 @@ def extract_final_answer(content: str) -> str:
 
 
 def is_raw_tool_call_text(content: str) -> bool:
-    return "<tool_call>" in (content or "") or "<function=" in (content or "")
+    text = content or ""
+    return any(marker in text for marker in ["<tool_call>", "</tool_call>", "<function=", "</function>"])
 
 
 def is_direct_answer_text(content: str) -> bool:
@@ -125,12 +179,23 @@ def extract_answer_from_reasoning(reasoning: str) -> str:
     text = str(reasoning or "").strip()
     if not text:
         return ""
+    xml_final = re.search(
+        r"<function=final_answer>\s*(?:<parameter=[^>]+>\s*)?(?P<answer>[^<\n][^<]{0,160})",
+        text,
+        flags=re.I,
+    )
+    if xml_final:
+        answer = xml_final.group("answer").strip(" *，,。.;；:：\"'`")
+        if answer:
+            return answer
     answer = extract_structured_answer_from_reasoning(text)
     if answer:
         return answer
     patterns = [
+        r"(?:final answer|answer|correct answer)\s*(?:is|:)\s*(?P<answer>[^\n。；;]+)",
         r"最终答案[：:]\s*(?P<answer>[^\n。；;]+)",
         r"答案[：:]\s*(?P<answer>[^\n。；;]+)",
+        r"(?:CEO|chief executive officer|Art Director|art director|aunt|founder|author|director|abbreviation|acronym)\s+(?:is|was)\s+(?P<answer>[A-Z][^\n。；;]{1,120})",
         r"这个图片(?:显示的)?是\s*(?P<answer>[^\n。；;]+)",
         r"这张图片(?:显示的)?是\s*(?P<answer>[^\n。；;]+)",
         r"this image (?:is|shows|depicts)\s*(?P<answer>[^\n.]+)",
@@ -143,6 +208,26 @@ def extract_answer_from_reasoning(reasoning: str) -> str:
         if 0 < len(answer) <= 160:
             return answer
     return ""
+
+
+def collect_reasoning_answer_candidates(records: list[dict[str, Any]], *, limit: int = 4) -> list[str]:
+    candidates: list[str] = []
+    seen: set[str] = set()
+    for record in reversed(records):
+        if record.get("role") != "assistant":
+            continue
+        answer = extract_answer_from_reasoning(str(record.get("reasoning_content") or "")).strip()
+        answer = answer.strip(" *，,。.;；:：\"'`")
+        if not answer or len(answer) > 160:
+            continue
+        key = answer.lower()
+        if key in seen:
+            continue
+        candidates.append(answer)
+        seen.add(key)
+        if len(candidates) >= limit:
+            break
+    return candidates
 
 
 def extract_structured_answer_from_reasoning(reasoning: str) -> str:
@@ -202,7 +287,21 @@ def final_answer_from_tool_call(call: dict[str, Any], content: str = "") -> str:
 
 
 def compress_image_b64(image_b64: str, *, max_side: int = 1280, quality: int = 88) -> str:
-    return image_b64
+    try:
+        from PIL import Image
+    except Exception:
+        return image_b64
+    try:
+        raw = base64.b64decode(image_b64)
+        with Image.open(io.BytesIO(raw)) as image:
+            image = image.convert("RGB")
+            image.thumbnail((max_side, max_side))
+            out = io.BytesIO()
+            image.save(out, format="JPEG", quality=quality, optimize=True)
+        compressed = base64.b64encode(out.getvalue()).decode("utf-8")
+        return compressed if len(compressed) < len(image_b64) else image_b64
+    except Exception:
+        return image_b64
 
 
 def compact_records_for_model(records: list[dict[str, Any]], *, max_chars: int = 120000) -> list[dict[str, Any]]:
@@ -253,6 +352,84 @@ def build_user_content(task: dict[str, Any]) -> Any:
     return str(instruction)
 
 
+def _bad_final_answer_text(text: str) -> bool:
+    lowered = str(text or "").strip().lower()
+    if not lowered:
+        return True
+    bad_exact = {
+        "none", "unknown", "n/a", "null", "</tool_call>", "search results:", "the search results:",
+        "我已确认：", "我已经确认：", "wikipedia", "google", "facebook", "youtube", "search result",
+        "source", "the source", "website", "webpage", "article", "<final_answer>", "</final_answer>",
+    }
+    bad_prefixes = (
+        "[harness]", "search results", "the search results", "我已确认", "我已经确认", "i found", "i have found",
+        "the earlier search", "based on the evidence", "based on search", "i have the", "i already",
+        "the unofficial", "the wikipedia", "the page", "the source", "the website", "according to", "this is ",
+        "这是", "这张", "图中", "根据", "搜索结果", "我找到了",
+    )
+    return lowered in bad_exact or lowered.startswith(bad_prefixes)
+
+
+def answer_review_needed(instruction: str, final_content: str, candidates: list[str]) -> bool:
+    pred = extract_final_answer(final_content)
+    pred_l = pred.lower().strip()
+    if _bad_final_answer_text(pred) or is_raw_tool_call_text(pred):
+        return True
+    if pred.endswith("\\") or pred.count('"') % 2 == 1:
+        return True
+    if len(pred) > 80:
+        return True
+    if len(pred) > 80 and any(len(candidate) < len(pred) for candidate in candidates):
+        return True
+    question = instruction.lower()
+    year_slot = any(key in question for key in ["what year", "in what year", "which year", "year", "哪一年", "年份"])
+    if year_slot and not re.search(r"(?:1[0-9]{3}|20[0-9]{2})", pred):
+        return True
+    count_slot = any(key in question for key in ["how many", "多少", "几", "共收录", "签署国"])
+    if count_slot and not re.search(r"\d+", pred):
+        return True
+    relation_slot = any(key in question for key in ["relationship", "relation", "之间的关系"])
+    if relation_slot and pred_l in {"friend", "friends", "共", "relationship", "relation"}:
+        return True
+    if any(key in question for key in ["category", "类别", "type of location", "type of place", "what type"]) and len(pred) > 48:
+        return True
+    object_choice_slot = any(
+        key in question
+        for key in [
+            "which album", "which film", "which movie", "which book", "which song", "which team",
+            "which company", "which organization", "which university",
+        ]
+    )
+    if object_choice_slot and re.fullmatch(r"\d{4}(?:年)?", pred.strip()):
+        return True
+    yes_no_slot = question.startswith(("do ", "does ", "did ", "is ", "are ", "was ", "were ", "has ", "have ", "had "))
+    if yes_no_slot and len(pred) > 12 and re.search(r"\b(yes|no)\b|是的|不是|否", pred, flags=re.I):
+        return True
+    workplace_slot = any(key in question for key in ["work at", "works at", "work for", "works for"])
+    country_like = {
+        "myanmar", "burma", "france", "united states", "usa", "uk", "united kingdom", "india", "china",
+        "germany", "italy", "spain", "canada", "australia", "japan",
+    }
+    if workplace_slot and pred_l in country_like:
+        return True
+    if not candidates:
+        return False
+    person_slot = any(
+        key in question
+        for key in ["who", "ceo", "chief executive", "founder", "director", "author", "aunt", "person", "full name", "first and surname"]
+    )
+    if person_slot and any(" " in candidate and candidate.lower() != pred_l for candidate in candidates):
+        if " " not in pred or pred_l in {"hugging face", "nike", "sam", "pbr", "wikipedia", "facebook", "google"}:
+            return True
+    acronym_slot = any(key in question for key in ["acronym", "abbreviation", "abbreviated", "short for"])
+    if acronym_slot and any(candidate.isupper() and 2 <= len(candidate) <= 12 and candidate.lower() != pred_l for candidate in candidates):
+        return True
+    bill_slot = any(key in question for key in ["bill", "senate bill", "proposal", "legislation"])
+    if bill_slot and any(re.match(r"^[A-Z]{1,4}\s?\d{2,5}$", candidate.strip()) for candidate in candidates):
+        return True
+    return False
+
+
 def resolve_search_image_arg(args: dict[str, Any], task: dict[str, Any]) -> dict[str, Any]:
     args = dict(args or {})
     image_path = str(task.get("image_path") or "").strip()
@@ -275,6 +452,8 @@ def run_react_task(
     memory_context: str = "",
     reflection_context: str = "",
     track_name: str | None = None,
+    expose_reasoning_candidates: bool = False,
+    final_answer_review: bool = False,
 ) -> AgentRunResult:
     assert_no_gold_payload(task)
     started = time.perf_counter()
@@ -302,6 +481,8 @@ def run_react_task(
     tool_calls_count = 0
     assistant_turns = 0
     search_text_queries: dict[str, int] = {}
+    search_text_history: list[str] = []
+    search_skip_warnings: dict[str, int] = {}
     tool_name_counts: dict[str, int] = {}
 
     for step in range(1, runtime.max_steps + 1):
@@ -385,22 +566,30 @@ def run_react_task(
             if normalized_fn == "search_image":
                 args = resolve_search_image_arg(args, task)
             if normalized_fn == "search_text":
-                query = " ".join(str(args.get("query") or "").lower().split())
+                query = " ".join(str(args.get("query") or "").split())
+                similar_query = find_similar_search_query(query, search_text_history)
                 search_text_queries[query] = search_text_queries.get(query, 0) + 1
                 tool_name_counts[normalized_fn] = tool_name_counts.get(normalized_fn, 0) + 1
-                if search_text_queries[query] > 3:
+                if similar_query and search_skip_warnings.get("similar", 0) < 1:
+                    search_skip_warnings["similar"] = search_skip_warnings.get("similar", 0) + 1
+                    result = {
+                        "ok": False,
+                        "content": (
+                            "[SKIPPED] Similar search_text query already tried: "
+                            f"{similar_query!r}. Do not search the same concept again; use existing evidence, "
+                            "or query a new missing slot such as birthplace, year, director, author, title, or country."
+                        ),
+                        "latency_ms": 0,
+                    }
+                elif search_text_queries[query] > 2 and search_skip_warnings.get("duplicate", 0) < 1:
+                    search_skip_warnings["duplicate"] = search_skip_warnings.get("duplicate", 0) + 1
                     result = {
                         "ok": False,
                         "content": "[SKIPPED] Duplicate search_text query. Use existing evidence or try a meaningfully different query.",
                         "latency_ms": 0,
                     }
-                elif tool_name_counts[normalized_fn] > 24:
-                    result = {
-                        "ok": False,
-                        "content": "[SKIPPED] search_text budget exhausted for this task. Use gathered evidence and answer.",
-                        "latency_ms": 0,
-                    }
                 else:
+                    search_text_history.append(query)
                     result = dispatch_tool(fn, args)
             else:
                 tool_name_counts[normalized_fn] = tool_name_counts.get(normalized_fn, 0) + 1
@@ -421,6 +610,52 @@ def run_react_task(
                     ok=result.get("ok"),
                 )
             )
+    reasoning_candidates = collect_reasoning_answer_candidates(records) if expose_reasoning_candidates else []
+    if final_answer_review and final_content and answer_review_needed(instruction, final_content, reasoning_candidates):
+        records.append(
+            make_record(
+                "user",
+                "收尾校验：隐藏思考中出现过这些候选答案："
+                + json.dumps(reasoning_candidates, ensure_ascii=False)
+                + "。请只根据题目所问的答案槽位选择最终答案；如果题目问人名/CEO/作者/导演，就输出人名；如果问缩写/法案编号，就输出缩写或编号；不要输出公司、来源或工具文本。只返回 JSON：{\"final_answer\":\"答案\"}。",
+                step_id=runtime.max_steps + 1,
+            )
+        )
+        response = client.chat(
+            to_messages(compact_records_for_model(records)),
+            tools=None,
+            max_tokens=min(runtime.max_tokens, 512),
+            temperature=0.1,
+            enable_thinking=False,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "final_answer_response",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "final_answer": {"type": "string"}
+                        },
+                        "required": ["final_answer"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        )
+        reviewed_content = response["content"] or ""
+        if reviewed_content.strip() and not is_raw_tool_call_text(reviewed_content):
+            final_content = reviewed_content
+        total_tokens += int(response.get("total_tokens") or 0)
+        assistant_turns += 1
+        records.append(
+            make_record(
+                "assistant",
+                reviewed_content,
+                step_id=runtime.max_steps + 1,
+                reasoning_content=response.get("reasoning_content") or None,
+                total_tokens=response.get("total_tokens") or None,
+            )
+        )
 
     needs_final_answer_step = bool(records) and (
         records[-1].get("role") == "tool"
@@ -437,7 +672,8 @@ def run_react_task(
             make_record(
                 "user",
                 correction
-                + "请基于题目和图片直接给出最终答案。不要再调用工具，不要写工具调用文本。只返回 JSON：{\"final_answer\":\"你的答案\"}。答案字段只写最短答案，不要解释、不要 Markdown、不要 <answer> 标签。",
+                + ("隐藏思考中的候选答案：" + json.dumps(reasoning_candidates, ensure_ascii=False) + "。" if reasoning_candidates else "")
+                + "请基于上面对话、工具返回、已验证证据、候选排除过程和题目要求，思考答案槽位后给出最终答案。不要再调用工具，不要写工具调用文本。只返回 JSON：{\"final_answer\":\"你的答案\"}。答案字段只写最短答案，不要解释、不要 Markdown、不要 <answer> 标签。",
                 step_id=runtime.max_steps + 1,
             )
         )
@@ -522,6 +758,18 @@ def run_react_task(
     pred = extract_final_answer(final_content)
     if is_raw_tool_call_text(pred):
         pred = extract_final_answer(select_previous_answer(records))
+    if not pred:
+        pred = extract_final_answer(select_previous_answer(records))
+    if not pred:
+        pred = next(
+            (
+                extract_answer_from_reasoning(str(r.get("reasoning_content") or ""))
+                for r in reversed(records)
+                if r.get("role") == "assistant"
+                and extract_answer_from_reasoning(str(r.get("reasoning_content") or ""))
+            ),
+            "",
+        )
     elapsed = time.perf_counter() - started
     out_dir = Path(runtime.output_dir) / (track_name or runtime.track_name) / "trajectories"
     out_dir.mkdir(parents=True, exist_ok=True)

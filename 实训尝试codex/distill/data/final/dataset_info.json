@@ -9,6 +9,15 @@
       "images": "images"
     }
   },
+  "distill_sft_trackd_tools_500_clean": {
+    "file_name": "distill_sft_trackd_tools_500.clean.json",
+    "formatting": "alpaca",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
   "distill_dpo_v1": {
     "file_name": "distill_dpo_v1.json",
     "formatting": "alpaca",
